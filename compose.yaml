@@ -37,5 +37,18 @@ services:
       db:
         condition: service_healthy
 
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    environment:
+      PMA_HOST: db
+      PMA_USER: maze        # auto-login as the app user; use root/root for full access
+      PMA_PASSWORD: maze
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8082:80"         # http://localhost:8082
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   db-data:

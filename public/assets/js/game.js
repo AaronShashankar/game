@@ -15,23 +15,22 @@ const canvas = document.getElementById('mazeCanvas');
 const ctx = canvas.getContext('2d');
 const popup = document.getElementById('questionPopup');
 const qText = document.getElementById('questionText');
+const qMeta = document.getElementById('questionMeta');
 const optionsDiv = document.getElementById('options');
 const levelPopup = document.getElementById('levelCompletePopup');
-const correctAnswerPopup = document.getElementById('correctAnswerPopup');
 const shopPopup = document.getElementById('shopPopup');
+const $ = (id) => document.getElementById(id);
 
-// Admin-tweakable colours (set from the admin panel in this browser).
-let viewSettings = {};
-try { viewSettings = JSON.parse(localStorage.getItem('mazeViewSettings') || '{}'); } catch (e) { /* ignore */ }
-const WALL_COLOR = viewSettings.wallColor || '#5bc0be';
-const LINE_WIDTH = typeof viewSettings.lineWidth === 'number' ? viewSettings.lineWidth : 4;
+const SIZE = 600;               // logical canvas size; drawn at device pixel ratio
+const POWERS = ['timeFreeze', 'hint', 'skip', 'scoreDoubler'];
+const POWER_NAMES = { timeFreeze: 'Time freeze', hint: 'Hint', skip: 'Skip gate', scoreDoubler: 'Score doubler' };
 
 // ---- State --------------------------------------------------------------------
 let wallet = null;             // coins, xp, level, inventory… from the server
 let run = null;                // current run state from the server
 let selectedSubject = '';
 let selectedDifficulty = 'Easy';
-let rows = 10, cols = 10, cellSize = canvas.width / cols;
+let rows = 10, cols = 10, cellSize = SIZE / cols;
 let maze = [], gates = [], player = { x: 0, y: 0 };
 let start = { x: 0, y: 0 }, end = { x: 9, y: 9 };
 let countdown = null;          // seconds left (display); server is authoritative
@@ -40,12 +39,33 @@ let levelComplete = false;
 let busy = false;              // a request that should block input is in flight
 let wrongInARow = 0;           // 3 wrong answers in a row sends you back to the start
 let hintGate = null;
-let sparkles = [];
 let drawLoopStarted = false;
 let runStartedAt = 0;
+let currentAnswers = [];       // answer buttons of the open question, for 1–4 keys
 
 const diffCfg = () => CFG.difficulties[selectedDifficulty] || CFG.difficulties.Easy;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---- Canvas setup & theme colours ------------------------------------------------
+function setupCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = SIZE * dpr;
+  canvas.height = SIZE * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+setupCanvas();
+
+let C = {};
+function readColors() {
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  C = {
+    bg: v('--surface'), wall: v('--text'), muted: v('--border-strong'), soft: v('--surface-2'),
+    accent: v('--accent'), accentSoft: v('--accent-soft'), text3: v('--text-3'), warning: v('--warning'),
+  };
+}
+readColors();
+window.addEventListener('themechange', readColors);
 
 // ---- Seeded maze generation -----------------------------------------------------
 // The server hands out a seed; the same seed always builds the same maze, so
@@ -121,121 +141,143 @@ function placeGates(count, serverGates) {
 }
 
 // ---- Drawing ----------------------------------------------------------------------
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
+}
+
 function drawMaze() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = WALL_COLOR;
-  ctx.lineWidth = LINE_WIDTH;
+  const s = cellSize;
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // Walls
+  ctx.strokeStyle = C.wall;
+  ctx.lineWidth = Math.max(1.5, Math.min(3, s / 12));
+  ctx.lineCap = 'round';
+  ctx.beginPath();
   for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) {
-    const x = j * cellSize, y = i * cellSize, c = maze[i]?.[j];
+    const x = j * s, y = i * s, c = maze[i]?.[j];
     if (!c) continue;
-    ctx.beginPath();
-    if (c.top) { ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); }
-    if (c.right) { ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); }
-    if (c.bottom) { ctx.moveTo(x, y + cellSize); ctx.lineTo(x + cellSize, y + cellSize); }
-    if (c.left) { ctx.moveTo(x, y); ctx.lineTo(x, y + cellSize); }
-    ctx.stroke();
+    if (c.top) { ctx.moveTo(x, y); ctx.lineTo(x + s, y); }
+    if (c.right) { ctx.moveTo(x + s, y); ctx.lineTo(x + s, y + s); }
+    if (c.bottom) { ctx.moveTo(x, y + s); ctx.lineTo(x + s, y + s); }
+    if (c.left) { ctx.moveTo(x, y); ctx.lineTo(x, y + s); }
   }
+  ctx.stroke();
+
+  // Gates: numbered, outlined in accent until opened
+  const g0 = s * 0.18, gs = s * 0.64;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `600 ${Math.max(9, s * 0.32)}px Inter, system-ui, sans-serif`;
   for (const g of gates) {
-    ctx.fillStyle = g.opened ? '#3a506b' : 'orange';
-    ctx.fillRect(g.y * cellSize + cellSize / 4, g.x * cellSize + cellSize / 4, cellSize / 2, cellSize / 2);
-    if (g.opened && Math.random() < 0.3) sparkles.push({ x: g.y * cellSize + cellSize / 2, y: g.x * cellSize + cellSize / 2, r: 2, alpha: 1 });
+    const gx = g.y * s + g0, gy = g.x * s + g0;
+    roundRect(gx, gy, gs, gs, s * 0.16);
+    if (g.opened) {
+      ctx.fillStyle = C.soft; ctx.fill();
+      ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+    } else {
+      ctx.fillStyle = C.accentSoft; ctx.fill();
+      ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = C.accent;
+      ctx.fillText(String(g.gate_no), gx + gs / 2, gy + gs / 2 + 1);
+    }
   }
-  for (let i = sparkles.length - 1; i >= 0; i--) {
-    const s = sparkles[i];
-    ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
-    s.alpha -= 0.02; s.r += 0.3;
-    if (s.alpha <= 0) sparkles.splice(i, 1);
-  }
-  // Start
-  ctx.fillStyle = 'blue';
-  ctx.fillRect(start.y * cellSize + cellSize / 4, start.x * cellSize + cellSize / 4, cellSize / 2, cellSize / 2);
-  // Gift (exit)
-  const gy = end.x * cellSize + cellSize / 2 + Math.sin(Date.now() / 300) * 5;
-  const gx = end.y * cellSize + cellSize / 2;
-  ctx.fillStyle = '#ff4d6d';
-  ctx.fillRect(gx - cellSize / 3, gy - cellSize / 3, (cellSize * 2) / 3, (cellSize * 2) / 3);
-  ctx.strokeStyle = '#ff8fa3'; ctx.lineWidth = 2;
-  ctx.strokeRect(gx - cellSize / 3, gy - cellSize / 3, (cellSize * 2) / 3, (cellSize * 2) / 3);
-  // Player (skin colour from owned cosmetics)
-  const py = player.x * cellSize + cellSize / 2 + Math.sin(Date.now() / 200) * 2;
-  const px = player.y * cellSize + cellSize / 2;
+
+  // Start marker
+  ctx.fillStyle = C.muted;
+  ctx.beginPath(); ctx.arc(start.y * s + s / 2, start.x * s + s / 2, s * 0.12, 0, Math.PI * 2); ctx.fill();
+
+  // Exit: solid ink tile with a gentle pulse
+  const pulse = 1 + Math.sin(Date.now() / 400) * 0.04;
+  const ew = s * 0.56 * pulse;
+  roundRect(end.y * s + (s - ew) / 2, end.x * s + (s - ew) / 2, ew, ew, s * 0.14);
+  ctx.fillStyle = C.wall; ctx.fill();
+
+  // Player (skin colour from owned cosmetics, otherwise the accent)
+  const px = player.y * s + s / 2, py = player.x * s + s / 2;
   const inv = wallet?.inventory || {};
-  ctx.fillStyle = inv.skin3 ? 'red' : inv.skin2 ? 'cyan' : 'lime';
-  ctx.beginPath(); ctx.arc(px, py, cellSize / 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = inv.skin3 ? '#ef4444' : inv.skin2 ? '#0ea5e9' : C.accent;
+  ctx.beginPath(); ctx.arc(px, py, s * 0.27, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
 
   // Fog of war (Hard)
   const fog = diffCfg().fog;
   if (fog && !levelComplete) {
-    const r = fog * cellSize;
+    const r = fog * s;
     const grad = ctx.createRadialGradient(px, py, r * 0.35, px, py, r);
-    grad.addColorStop(0, 'rgba(5,8,12,0)');
-    grad.addColorStop(1, 'rgba(5,8,12,0.97)');
+    grad.addColorStop(0, hexA(C.bg, 0));
+    grad.addColorStop(1, hexA(C.bg, 0.97));
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, SIZE, SIZE);
   }
   // Hint highlight sits above the fog
   if (hintGate) {
-    ctx.strokeStyle = 'yellow'; ctx.lineWidth = 4;
-    ctx.strokeRect(hintGate.y * cellSize + cellSize / 4, hintGate.x * cellSize + cellSize / 4, cellSize / 2, cellSize / 2);
+    ctx.strokeStyle = C.warning; ctx.lineWidth = 3;
+    roundRect(hintGate.y * s + g0 - 3, hintGate.x * s + g0 - 3, gs + 6, gs + 6, s * 0.2);
+    ctx.stroke();
   }
   requestAnimationFrame(drawMaze);
 }
 
+// "#rrggbb" + alpha -> rgba(); other formats are returned unchanged.
+function hexA(hex, a) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
 // ---- HUD / messages ---------------------------------------------------------------
+function bump(id) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
+
 function updateHUD() {
   if (!wallet) return;
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('coins', wallet.coins);
-  set('coinsHUD', wallet.coins);
-  set('shopCoins', wallet.coins);
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  set('coins', wallet.coins.toLocaleString());
+  set('shopCoins', wallet.coins.toLocaleString());
   set('xp', `${wallet.xp_into_level}/${wallet.xp_for_next}`);
   set('streak', wallet.streak);
   set('levelDisplay', wallet.level);
-  for (const p of ['timeFreeze', 'hint', 'skip', 'scoreDoubler']) {
+  App.setCoins(wallet.coins);
+  for (const p of POWERS) {
     const n = wallet.inventory[p] || 0;
-    const cap = p.charAt(0).toUpperCase() + p.slice(1);
     set(p + 'Count', n);
-    set('shop' + cap + 'Count', n);
-    const btn = document.getElementById(p + 'Btn');
+    const btn = $(p + 'Btn');
     if (btn) btn.disabled = n === 0;
   }
-  document.getElementById('scoreDoublerBtn')?.classList.toggle('power-up-active', !!run?.doubler);
+  $('scoreDoublerBtn')?.classList.toggle('power-up-active', !!run?.doubler);
 }
 
 function renderTimer() {
-  document.getElementById('timeLeft').textContent = countdown === null ? '∞' : Math.max(0, countdown);
-  const box = document.getElementById('timer');
-  box.classList.toggle('low-time', countdown !== null && countdown <= 10);
+  const el = $('timeLeft');
+  if (countdown === null) el.textContent = 'No limit';
+  else {
+    const t = Math.max(0, countdown);
+    el.textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+  }
+  const box = $('timer');
+  box.classList.toggle('low-time', countdown !== null && countdown <= 10 && !isTimeFrozen);
   box.classList.toggle('frozen', isTimeFrozen);
 }
 
-function showPopup(msg) {
-  const el = document.createElement('div');
-  el.className = 'popup show';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2000);
+function renderGateProgress() {
+  const opened = gates.filter((g) => g.opened).length;
+  $('gateProgress').textContent = `${opened} / ${gates.length} gates`;
+  $('gateProgress').classList.toggle('chip-success', gates.length > 0 && opened === gates.length);
 }
 
-function animateReward(type, value) {
-  const el = document.getElementById(type);
-  if (!el || !value) return;
-  const fly = document.createElement('div');
-  fly.className = 'coinXP';
-  fly.textContent = (value > 0 ? '+' : '') + value;
-  el.parentElement.appendChild(fly);
-  setTimeout(() => fly.remove(), 1000);
-}
-
-function flashHUD() {
-  document.querySelectorAll('#hud div').forEach((d) => { d.classList.add('flash'); setTimeout(() => d.classList.remove('flash'), 300); });
-}
+const toast = (msg, type) => App.toast(msg, type);
 
 function applyServer(result) {
   if (result.wallet) wallet = result.wallet;
   if (result.run) syncRun(result.run);
-  (result.new_badges || []).forEach((b) => showPopup(`🏅 Badge Unlocked: ${b}!`));
+  (result.new_badges || []).forEach((b) => toast(`Badge unlocked: ${b}`, 'success'));
   updateHUD();
 }
 
@@ -254,27 +296,17 @@ function syncRun(state) {
     if (s) g.opened = s.status !== 'pending';
   }
   renderTimer();
+  renderGateProgress();
 }
 
 function reportError(e) {
-  showPopup('⚠️ ' + (e.message || 'Something went wrong'));
+  toast(e.message || 'Something went wrong', 'danger');
 }
+
+function openModal(el) { el.classList.add('show'); }
+function closeModal(el) { el.classList.remove('show'); }
 
 // ---- Run lifecycle ----------------------------------------------------------------
-function selectSubject(ev, subject) {
-  document.querySelectorAll('.subject-card').forEach((c) => c.classList.remove('selected'));
-  ev.currentTarget.classList.add('selected');
-  selectedSubject = subject;
-  document.getElementById('startGameBtn').style.display = 'block';
-}
-
-function startGameWithSubject() {
-  if (!selectedSubject) return showPopup('Please select a subject first! 📚');
-  document.getElementById('subjectSelection').style.display = 'none';
-  document.getElementById('gameSection').style.display = 'block';
-  startRun();
-}
-
 async function startRun(replayOf = null) {
   busy = true;
   try {
@@ -283,14 +315,13 @@ async function startRun(replayOf = null) {
     });
     const cfg = diffCfg();
     rows = cols = cfg.size;
-    cellSize = canvas.width / cols;
+    cellSize = SIZE / cols;
     start = { x: 0, y: 0 };
     end = { x: rows - 1, y: cols - 1 };
     player = { ...start };
     levelComplete = false;
     wrongInARow = 0;
     hintGate = null;
-    sparkles = [];
     generateMaze(r.run.seed);
     placeGates(r.run.gate_count, r.run.gates);
     syncRun(r.run);
@@ -298,7 +329,6 @@ async function startRun(replayOf = null) {
     updateHUD();
     if (!drawLoopStarted) { drawLoopStarted = true; drawMaze(); }
     canvas.focus();
-    showPopup(`Playing: ${selectedSubject} (${selectedDifficulty}) 🎯`);
   } catch (e) {
     reportError(e);
   } finally {
@@ -307,13 +337,13 @@ async function startRun(replayOf = null) {
 }
 
 function nextLevel() {
-  levelPopup.classList.remove('show');
+  closeModal(levelPopup);
   startRun();
 }
 
 // Same maze layout, fresh run (gates closed again).
 function restartLevel() {
-  levelPopup.classList.remove('show');
+  closeModal(levelPopup);
   startRun(run?.run_id ?? null);
 }
 
@@ -334,17 +364,18 @@ async function completeLevel() {
       } catch (e) {
         // A very fast human can beat the server's minimum time; wait it out.
         if (e.code !== 'TOO_FAST' || tries >= 3) throw e;
-        showPopup('Checking your run…');
+        toast('Checking your run…');
         await sleep(Math.max(1000, diffCfg().min_seconds * 1000 - (Date.now() - runStartedAt)));
       }
     }
     applyServer(r);
-    levelPopup.querySelector('p').textContent =
-      `+${r.coins} coins, +${r.xp} XP` + (r.time_bonus ? ` (includes +${r.time_bonus} time bonus)` : '');
-    levelPopup.classList.add('show');
-    animateReward('coins', r.coins);
-    animateReward('xp', r.xp);
-    if (r.level_up) showPopup(`🎉 Level Up! You are now Level ${r.level_up}!`);
+    $('resultCoins').textContent = `+${r.coins}`;
+    $('resultXp').textContent = `+${r.xp}`;
+    $('levelSummary').textContent = r.time_bonus
+      ? `Includes a ${r.time_bonus}-coin time bonus.`
+      : `${selectedSubject} · ${selectedDifficulty}`;
+    openModal(levelPopup);
+    if (r.level_up) toast(`Level up! You're now level ${r.level_up}.`, 'success');
   } catch (e) {
     levelComplete = false;
     reportError(e);
@@ -361,30 +392,40 @@ async function askGate(gate) {
     q = await App.api('/api/runs/question', { body: { run_id: run.run_id, gate_no: gate.gate_no } });
   } catch (e) {
     busy = false;
-    if (e.code === 'GATE_NOT_PENDING') { gate.opened = true; return; }
+    if (e.code === 'GATE_NOT_PENDING') { gate.opened = true; renderGateProgress(); return; }
     return reportError(e);
   }
   busy = false;
   const shownAt = Date.now();
 
-  qText.innerText = `Subject: ${q.subject}\n${q.prompt}`;
+  qMeta.innerHTML =
+    `<span class="chip chip-accent">Gate ${gate.gate_no} of ${gates.length}</span>` +
+    `<span class="chip">${App.escape(q.subject)}</span>` +
+    (q.attempt_no > 1 ? `<span class="chip chip-warning">Attempt ${q.attempt_no}</span>` : '');
+  qText.textContent = q.prompt;
   optionsDiv.innerHTML = '';
   // Show options in random order but submit the original index.
   const order = q.options.map((text, idx) => ({ text, idx })).sort(() => Math.random() - 0.5);
-  for (const opt of order) {
+  currentAnswers = order.map((opt, i) => {
     const btn = document.createElement('button');
-    btn.textContent = opt.text;
+    btn.className = 'answer';
+    btn.innerHTML = `<span class="kbd">${i + 1}</span><span></span>`;
+    btn.lastChild.textContent = opt.text;
     btn.onclick = async () => {
+      if (btn.disabled) return;
       optionsDiv.querySelectorAll('button').forEach((b) => (b.disabled = true));
+      btn.classList.add('is-picked');
       // The server ignores answers sent <1s after the question was served.
       const wait = 1100 - (Date.now() - shownAt);
       if (wait > 0) await sleep(wait);
-      popup.classList.remove('show');
+      closeModal(popup);
+      currentAnswers = [];
       await submitAnswer(gate, q.attempt_no, opt.idx);
     };
     optionsDiv.appendChild(btn);
-  }
-  popup.classList.add('show');
+    return btn;
+  });
+  openModal(popup);
 }
 
 async function submitAnswer(gate, attemptNo, option, retry = 0) {
@@ -394,23 +435,17 @@ async function submitAnswer(gate, attemptNo, option, retry = 0) {
     applyServer(r);
     if (r.correct) {
       wrongInARow = 0;
-      correctAnswerPopup.querySelector('.reward-amount').textContent =
-        r.combo > 1 ? `+${r.coins} (🔥 x${r.combo} combo)` : `+${r.coins}`;
-      correctAnswerPopup.classList.add('show');
-      setTimeout(() => correctAnswerPopup.classList.remove('show'), 1200);
-      animateReward('coins', r.coins);
-      animateReward('xp', r.xp);
-      flashHUD();
+      toast(r.combo > 1 ? `Correct · +${r.coins} coins · ${r.combo}× combo` : `Correct · +${r.coins} coins`, 'success');
+      bump('coins'); bump('xp');
     } else {
       wrongInARow++;
-      if (r.coins) animateReward('coins', r.coins);
       const penalty = r.coins ? ` (${r.coins} coins)` : '';
       if (wrongInARow >= 3) {
         player = { ...start };
         wrongInARow = 0;
-        showPopup(`⚠️ 3 wrong answers — back to the start!${penalty}`);
+        toast(`Three wrong answers — back to the start${penalty}`, 'danger');
       } else {
-        showPopup(`❌ Wrong answer! ${3 - wrongInARow} tries left.${penalty}`);
+        toast(`Not quite. ${3 - wrongInARow} ${3 - wrongInARow === 1 ? 'try' : 'tries'} left${penalty}`, 'danger');
       }
     }
   } catch (e) {
@@ -451,16 +486,21 @@ const KEY_DIRS = {
   w: [-1, 0], s: [1, 0], a: [0, -1], d: [0, 1], W: [-1, 0], S: [1, 0], A: [0, -1], D: [0, 1],
 };
 document.addEventListener('keydown', (e) => {
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
   if (e.key === 'Escape') {
-    popup.classList.remove('show');
-    correctAnswerPopup.classList.remove('show');
-    shopPopup.classList.remove('show');
-    if (!levelComplete) levelPopup.classList.remove('show');  // its buttons are the only way on
+    closeModal(shopPopup);
+    if (!busy && popup.classList.contains('show')) { closeModal(popup); currentAnswers = []; }
+    return;   // the finish dialog's buttons are the only way on
+  }
+  // 1–4: answer the open question, otherwise use a power-up.
+  if (/^[1-4]$/.test(e.key)) {
+    const n = Number(e.key) - 1;
+    if (popup.classList.contains('show')) { currentAnswers[n]?.click(); return; }
+    if (!inputBlocked()) usePower(POWERS[n]);
     return;
   }
   const dir = KEY_DIRS[e.key];
   if (!dir || !maze.length) return;
-  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
   e.preventDefault();
   tryMove(dir[0], dir[1]);
 });
@@ -488,11 +528,12 @@ setInterval(async () => {
   timingOut = true;
   try {
     const r = await App.api('/api/runs/timeout', { body: { run_id: run.run_id } });
-    popup.classList.remove('show');
+    closeModal(popup);
     player = { ...start };
     wrongInARow = 0;
     syncRun(r.run);
-    showPopup("⏳ Time's up! Back to the start.");
+    applyServer(r);
+    toast("Time's up — back to the start", 'danger');
   } catch (e) {
     if (e.code === 'NOT_EXPIRED') countdown = 2;  // clocks slightly apart: try again shortly
     else reportError(e);
@@ -510,12 +551,12 @@ function nearestPendingGate() {
 async function usePower(type) {
   if (!run || levelComplete) return;
   if (!(wallet?.inventory[type] > 0)) {
-    showPopup(`No ${type} power-ups left — visit the shop!`);
+    toast(`No ${POWER_NAMES[type].toLowerCase()} left`);
     return showShop();
   }
-  if (type === 'timeFreeze' && countdown === null) return showPopup('⏱ No timer on Easy — saved your Time Freeze.');
+  if (type === 'timeFreeze' && countdown === null) return toast('No timer on Easy — your time freeze is saved.');
   const target = type === 'skip' || type === 'hint' ? nearestPendingGate() : null;
-  if ((type === 'skip' || type === 'hint') && !target) return showPopup('No unopened gates left!');
+  if ((type === 'skip' || type === 'hint') && !target) return toast('Every gate is already open.');
 
   try {
     const r = await App.api('/api/runs/powerup', {
@@ -523,16 +564,15 @@ async function usePower(type) {
     });
     applyServer(r);
     if (type === 'timeFreeze') {
-      showPopup(`⏱ Timer frozen for ${r.effect.frozen_seconds} seconds!`);
+      toast(`Timer frozen for ${r.effect.frozen_seconds} seconds`, 'success');
     } else if (type === 'hint') {
       hintGate = target;
-      showPopup('🔍 Nearest gate highlighted in yellow!');
+      toast('Nearest gate highlighted');
       setTimeout(() => (hintGate = null), 3000);
     } else if (type === 'skip') {
-      flashHUD();
-      showPopup('✅ Skip Gate used — nearest gate opened.');
+      toast(`Gate ${target.gate_no} opened`, 'success');
     } else if (type === 'scoreDoubler') {
-      showPopup('💰 Score Doubler active for your next correct answer!');
+      toast('Your next correct answer pays double', 'success');
     }
   } catch (e) {
     reportError(e);
@@ -540,26 +580,66 @@ async function usePower(type) {
 }
 
 // ---- In-game shop -------------------------------------------------------------------
-function showShop() { updateHUD(); shopPopup.classList.add('show'); }
-function hideShop() { shopPopup.classList.remove('show'); }
+const ITEM_ICONS = { timeFreeze: 'snowflake', hint: 'search', skip: 'skip', scoreDoubler: 'trend', pack: 'package', megaPack: 'gem' };
+
+async function showShop() {
+  updateHUD();
+  openModal(shopPopup);
+  const list = $('shopList');
+  try {
+    const { items, wallet: w } = await App.api('/api/shop');
+    wallet = w;
+    updateHUD();
+    const sellable = items.filter((i) => i.active && (i.kind === 'powerup' || i.kind === 'pack'));
+    list.innerHTML = '';
+    for (const item of sellable) {
+      const row = document.createElement('div');
+      row.className = 'list-row';
+      row.innerHTML = `
+        <div class="icon-box">${App.icon(ITEM_ICONS[item.code] || 'package')}</div>
+        <div class="grow">
+          <div class="list-title">${App.escape(item.name)}</div>
+          <div class="list-meta">${App.escape(item.description)}${item.kind === 'powerup' ? ` · You have ${wallet.inventory[item.code] || 0}` : ''}</div>
+        </div>
+        <span class="price">${App.icon('coins')}${item.price}</span>
+        <button class="btn btn-secondary btn-sm">Buy</button>`;
+      const btn = row.querySelector('button');
+      btn.disabled = wallet.coins < item.price;
+      btn.addEventListener('click', () => buyItem(item.code, item.name));
+      list.appendChild(row);
+    }
+  } catch (e) {
+    list.innerHTML = `<div class="empty">${App.escape(e.message)}</div>`;
+  }
+}
+function hideShop() { closeModal(shopPopup); canvas.focus(); }
+shopPopup.addEventListener('click', (e) => { if (e.target === shopPopup) hideShop(); });
 
 async function buyItem(code, label) {
   try {
     const r = await App.api('/api/shop/buy', { body: { item: code } });
     applyServer(r);
-    flashHUD();
-    showPopup(`✅ Purchased ${label}!`);
+    bump('coins');
+    toast(`Bought ${label}`, 'success');
+    showShop();
   } catch (e) {
     reportError(e);
   }
 }
-// Prices in the markup are display-only; the server charges its own price.
-const buyPowerUp = (type) => buyItem(type, type);
-const buyPowerUpPack = () => buyItem('pack', 'Power-Up Pack');
-const buyMegaPack = () => buyItem('megaPack', 'Mega Pack');
 
 // ---- Boot ---------------------------------------------------------------------------
 (async function boot() {
+  const params = new URLSearchParams(location.search);
+  const d = (params.get('difficulty') || '').toLowerCase();
+  if (['easy', 'medium', 'hard'].includes(d)) selectedDifficulty = d.charAt(0).toUpperCase() + d.slice(1);
+  const subject = params.get('subject');
+  if (!subject || !(CFG.subjects.includes(subject) || subject === 'Mixed Mode')) {
+    location.replace(App.url('choose-subject') + (d ? `?difficulty=${d}` : ''));
+    return;
+  }
+  selectedSubject = subject;
+  $('runSubject').textContent = subject === 'Mixed Mode' ? 'Mixed mode' : subject;
+  $('runDifficulty').textContent = `${selectedDifficulty} · ${diffCfg().size} × ${diffCfg().size}${diffCfg().fog ? ' · fog of war' : ''}`;
   try {
     wallet = (await App.api('/api/me')).wallet;
     updateHUD();
@@ -567,16 +647,5 @@ const buyMegaPack = () => buyItem('megaPack', 'Mega Pack');
     return reportError(e);
   }
   renderTimer();
-  const params = new URLSearchParams(location.search);
-  const d = (params.get('difficulty') || '').toLowerCase();
-  if (['easy', 'medium', 'hard'].includes(d)) selectedDifficulty = d.charAt(0).toUpperCase() + d.slice(1);
-  const subject = params.get('subject');
-  if (subject && (CFG.subjects.includes(subject) || subject === 'Mixed Mode')) {
-    selectedSubject = subject;
-    document.getElementById('subjectSelection').style.display = 'none';
-    document.getElementById('gameSection').style.display = 'block';
-    startRun();
-  } else {
-    document.getElementById('subjectSelection').style.display = 'block';
-  }
+  startRun();
 })();

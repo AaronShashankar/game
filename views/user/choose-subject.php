@@ -1,143 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Choose Subject — MazeQuest</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body {
-      background: linear-gradient(to bottom right, #f4e9ff, #fff7f7);
-      min-height: 100vh;
-      padding: 40px;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-    header button {
-      background: #f2f2f2;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 12px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    h1 {
-      font-size: 24px;
-      font-weight: 700;
-    }
-    .subject-container {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-      padding: 40px;
-      text-align: center;
-    }
-    .difficulty {
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 16px;
-    }
-    .subtitle {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 30px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-    }
-    .card {
-      border: 2px solid #eee;
-      border-radius: 12px;
-      padding: 25px;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
-      border-color: #d9d9ff;
-    }
-    .icon {
-      font-size: 28px;
-      background: #f6f6ff;
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-    h3 {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    p {
-      font-size: 13px;
-      color: #555;
-    }
-  </style>
-  <?= app_scripts() ?>
-</head>
-<body>
+<?php
+use App\Services\GameRules;
 
-  <header>
-    <button onclick="goBack()">← Back</button>
-    <h1>Choose Subject</h1>
-  </header>
+/** @var string[] $subjects */
+/** @var array $difficulties */
+$title = 'New game';
+$active = 'play';
+require __DIR__ . '/../layouts/app-start.php';
 
-  <div class="subject-container">
-    <p class="difficulty" id="difficultyText">Difficulty: EASY</p>
-    <p class="subtitle">Select a subject to start your maze adventure</p>
+$meta = [
+    'Mathematics'        => ['calculator', 'Numbers, arithmetic and problem solving'],
+    'Science'            => ['flask', 'Physics, chemistry and biology'],
+    'General Knowledge'  => ['globe', 'World facts, geography and culture'],
+    'History'            => ['landmark', 'Events, people and civilisations'],
+    'English Vocabulary' => ['type', 'Words, meanings and synonyms'],
+];
+$diff = ucfirst(strtolower((string) ($_GET['difficulty'] ?? 'easy')));
+if (!isset($difficulties[$diff])) $diff = 'Easy';
+?>
 
-    <div class="grid">
-      <div class="card" onclick="selectSubject('Mathematics')">
-        <div class="icon">🧮</div>
-        <h3>Mathematics</h3>
-        <p>Test your knowledge in mathematics</p>
-      </div>
-
-      <div class="card" onclick="selectSubject('Science')">
-        <div class="icon">🧪</div>
-        <h3>Science</h3>
-        <p>Test your knowledge in science</p>
-      </div>
-
-      <div class="card" onclick="selectSubject('General Knowledge')">
-        <div class="icon">🌐</div>
-        <h3>General Knowledge</h3>
-        <p>Test your knowledge in general knowledge</p>
-      </div>
-
-      <div class="card" onclick="selectSubject('History')">
-        <div class="icon">📖</div>
-        <h3>History</h3>
-        <p>Test your knowledge in history</p>
-      </div>
-
-      <div class="card" onclick="selectSubject('English Vocabulary')">
-        <div class="icon">🔤</div>
-        <h3>English Vocabulary</h3>
-        <p>Test your knowledge in english vocabulary</p>
-      </div>
-
-      <div class="card" onclick="selectSubject('Mixed Mode')">
-        <div class="icon">🔀</div>
-        <h3>Mixed Mode</h3>
-        <p>Test your knowledge in mixed mode</p>
-      </div>
-    </div>
+<div class="page-head">
+  <div>
+    <h1>New game</h1>
+    <p>Pick a difficulty, then choose what you want to be quizzed on.</p>
   </div>
+</div>
 
-  <?= page_script('choose-subject') ?>
-</body>
-</html>
+<div class="card">
+  <div class="row-between" style="flex-wrap:wrap">
+    <div class="tabs" role="radiogroup" aria-label="Difficulty">
+      <?php foreach ($difficulties as $name => $d): ?>
+        <button class="tab<?= $name === $diff ? ' is-active' : '' ?>" role="radio" aria-checked="<?= $name === $diff ? 'true' : 'false' ?>" data-difficulty="<?= e($name) ?>"><?= e($name) ?></button>
+      <?php endforeach; ?>
+    </div>
+    <div class="row" id="diffSpec" style="flex-wrap:wrap; gap:6px"></div>
+  </div>
+</div>
+
+<h2 class="mt-24" style="font-size:15px; margin-bottom:12px">Subject</h2>
+<div class="subject-grid">
+  <?php foreach ($subjects as $s): [$ico, $desc] = $meta[$s] ?? ['book', 'Questions on ' . $s]; ?>
+    <button class="subject" data-subject="<?= e($s) ?>">
+      <span class="icon-box"><?= icon($ico) ?></span>
+      <span class="grow"><span class="subject-name"><?= e($s) ?></span><br><span class="subject-desc"><?= e($desc) ?></span></span>
+      <?= icon('arrow-right', 'icon-sm') ?>
+    </button>
+  <?php endforeach; ?>
+  <button class="subject" data-subject="<?= e(GameRules::MIXED_SUBJECT) ?>">
+    <span class="icon-box"><?= icon('shuffle') ?></span>
+    <span class="grow"><span class="subject-name">Mixed mode</span><br><span class="subject-desc">A bit of everything</span></span>
+    <?= icon('arrow-right', 'icon-sm') ?>
+  </button>
+</div>
+
+<script>window.GameConfig = <?= json_encode(['difficulties' => $difficulties, 'selected' => $diff], JSON_HEX_TAG) ?>;</script>
+<?= page_script('choose-subject') ?>
+<?php require __DIR__ . '/../layouts/app-end.php'; ?>

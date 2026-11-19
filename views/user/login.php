@@ -1,41 +1,33 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>User Login — MazeQuest</title>
-  <link rel="stylesheet" href="<?= e(asset('css/global.css')) ?>" />
-  <link rel="stylesheet" href="<?= e(asset('css/login_user.css')) ?>" />
-  <?= app_scripts() ?>
-</head>
-<body>
+<?php
+$title = 'Log in';
+require __DIR__ . '/../layouts/document-start.php';
+?>
+<div class="auth-top">
+  <a href="<?= url('') ?>"><?= brand() ?></a>
+  <?= theme_toggle() ?>
+</div>
 
-  <button class="theme-toggle" onclick="toggleTheme()">🌓 Theme</button>
+<main class="auth">
+  <div class="auth-card">
+    <h1>Welcome back</h1>
+    <p class="auth-sub">Log in to continue your adventure.</p>
 
-  <div class="auth-wrapper">
-    <div class="card auth-card">
-      <div class="auth-title">👤 User Login</div>
-      <p style="margin-bottom: 20px; font-size: 14px;">Welcome back to MazeQuest!</p>
-
-      <form id="loginForm" class="auth-form">
-        <label>Email</label>
-        <input type="email" id="loginUsername" name="email" placeholder="Enter your email" required />
-
-        <label>Password</label>
-        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required />
-
-        <div id="loginErrorMessage" style="color: red; font-size: 13px; margin-bottom: 10px;"></div>
-
-        <button type="submit" class="btn-primary" id="loginButton">Login</button>
-      </form>
-
-      <div class="auth-footer">
-        <p>Don't have an account? <a href="<?= url('register') ?>">Register</a></p>
-        <p><a href="<?= url('') ?>">← Back to Home</a></p>
+    <form id="loginForm" class="form" novalidate>
+      <div class="field">
+        <label for="loginUsername">Email</label>
+        <input class="input" type="email" id="loginUsername" name="email" autocomplete="email" placeholder="you@example.com" required>
       </div>
-    </div>
-  </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input class="input" type="password" id="loginPassword" name="password" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <div id="loginErrorMessage" class="form-error" role="alert"></div>
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="loginButton">Log in</button>
+    </form>
 
-  <?= page_script('auth') ?>
-</body>
-</html>
+    <p class="auth-foot">New to MazeQuest? <a href="<?= url('register') ?>">Create an account</a></p>
+  </div>
+</main>
+
+<?= page_script('auth') ?>
+<?php require __DIR__ . '/../layouts/document-end.php'; ?>

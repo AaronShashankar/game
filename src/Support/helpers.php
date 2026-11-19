@@ -78,6 +78,38 @@ function app_scripts(): string
          . '  <script src="' . e(asset('js/layout.js')) . '"></script>';
 }
 
+// Inline icon from the sprite in views/layouts/icons.php.
+function icon(string $name, string $class = ''): string
+{
+    return '<svg class="icon' . ($class !== '' ? ' ' . e($class) : '') . '" aria-hidden="true"><use href="#i-' . e($name) . '"/></svg>';
+}
+
+// The logged-in player's row (null for guests), loaded once per request.
+function current_player(): ?array
+{
+    static $player = false;
+    if ($player === false) {
+        $id = \App\Http\Auth::playerId();
+        $player = $id !== null ? (new \App\Repositories\UserRepository())->find($id) : null;
+    }
+    return $player;
+}
+
+// Logo mark + word mark.
+function brand(): string
+{
+    return '<span class="brand"><svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8"/>'
+         . '<path d="M8 8h12M8 8v12h6M20 12v8M12 12h4v4" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+         . '<circle cx="17" cy="20" r="2"/></svg>MazeQuest</span>';
+}
+
+// Light/dark switch button (icons swap via CSS).
+function theme_toggle(): string
+{
+    return '<button type="button" class="btn btn-ghost btn-icon" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">'
+         . icon('moon', 'theme-moon') . icon('sun', 'theme-sun') . '</button>';
+}
+
 // <script> tag for a page's own JS file in public/assets/js/.
 function page_script(string $name): string
 {

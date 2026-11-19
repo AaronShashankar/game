@@ -1,40 +1,34 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin Login — MazeQuest</title>
-  <link rel="stylesheet" href="<?= e(asset('css/global.css')) ?>" />
-  <link rel="stylesheet" href="<?= e(asset('css/login_admin.css')) ?>" />
-  <?= app_scripts() ?>
-</head>
-<body>
+<?php
+$title = 'Admin';
+require __DIR__ . '/../layouts/document-start.php';
+?>
+<div class="auth-top">
+  <a href="<?= url('') ?>"><?= brand() ?></a>
+  <?= theme_toggle() ?>
+</div>
 
-  <button class="theme-toggle" onclick="toggleTheme()">🌓 Theme</button>
+<main class="auth">
+  <div class="auth-card">
+    <span class="chip"><?= icon('shield') ?>Admin</span>
+    <h1 class="mt-16">Admin sign in</h1>
+    <p class="auth-sub">Restricted to MazeQuest administrators.</p>
 
-  <div class="auth-wrapper">
-    <div class="card auth-card">
-      <div class="auth-title">🔐 Admin Access</div>
-      <p style="margin-bottom: 20px; font-size: 14px;">Secure login for MazeQuest administrators.</p>
-
-      <form id="loginForm" class="auth-form">
-        <label>Admin Email</label>
-        <input type="email" id="loginUsername" name="email" placeholder="Enter admin email" required />
-
-        <label>Password</label>
-        <input type="password" id="loginPassword" name="password" placeholder="Enter password" required />
-
-        <div id="loginErrorMessage" style="color: red; font-size: 13px; margin-bottom: 10px;"></div>
-
-        <button type="submit" class="btn-primary" id="loginButton">Admin Login</button>
-      </form>
-
-      <div class="auth-footer">
-        <p><a href="<?= url('') ?>">← Back to Home</a></p>
+    <form id="loginForm" class="form" novalidate>
+      <div class="field">
+        <label for="loginUsername">Email</label>
+        <input class="input" type="email" id="loginUsername" name="email" autocomplete="username" required>
       </div>
-    </div>
-  </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input class="input" type="password" id="loginPassword" name="password" autocomplete="current-password" required>
+      </div>
+      <div id="loginErrorMessage" class="form-error" role="alert"></div>
+      <button type="submit" class="btn btn-primary btn-lg btn-block" id="loginButton">Sign in</button>
+    </form>
 
-  <?= page_script('auth') ?>
-</body>
-</html>
+    <p class="auth-foot"><a href="<?= url('') ?>">Back to MazeQuest</a></p>
+  </div>
+</main>
+
+<?= page_script('auth') ?>
+<?php require __DIR__ . '/../layouts/document-end.php'; ?>

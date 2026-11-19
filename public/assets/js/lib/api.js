@@ -57,10 +57,34 @@
     return div.innerHTML;
   };
 
-  // Avatar fallback: a generated image instead of a third-party service.
+  // Avatar fallback: a generated initial instead of a third-party service.
   App.avatar = (src, name) =>
     src || 'data:image/svg+xml,' + encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="32" fill="#5bc0be"/>` +
-      `<text x="32" y="41" font-size="28" text-anchor="middle" fill="#fff" font-family="sans-serif">` +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="32" fill="#e9e9e5"/>` +
+      `<text x="32" y="41" font-size="26" font-weight="600" text-anchor="middle" fill="#55555d" font-family="Inter,system-ui,sans-serif">` +
       `${App.escape((name || '?').charAt(0).toUpperCase())}</text></svg>`);
+
+  // <svg> markup for an icon in the page's sprite (views/layouts/icons.php).
+  App.icon = (name, cls = '') => `<svg class="icon ${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+
+  // Small notification at the bottom of the screen. type: '' | 'success' | 'danger'
+  App.toast = (message, type = '') => {
+    const stack = document.getElementById('toasts');
+    if (!stack) return;
+    const el = document.createElement('div');
+    el.className = 'toast' + (type ? ' toast-' + type : '');
+    const ico = { success: 'check', danger: 'x' }[type];
+    el.innerHTML = (ico ? App.icon(ico) : '') + '<span></span>';
+    el.querySelector('span').textContent = message;
+    stack.appendChild(el);
+    setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 200); }, 2600);
+  };
+
+  // Keep the coin counter in the top bar in step with server responses.
+  App.setCoins = (coins) => {
+    const el = document.getElementById('shellCoins');
+    if (!el || coins == null || el.textContent === String(coins)) return;
+    el.textContent = coins;
+    el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+  };
 })();

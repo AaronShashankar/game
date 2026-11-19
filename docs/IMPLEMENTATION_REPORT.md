@@ -74,7 +74,7 @@ start ──► (question ──► answer)×N ──► complete
   │            ▲            │
   │            └─ wrong ────┘ (attempt 2, 3 …)
   ├─► powerup (timeFreeze | hint | skip | scoreDoubler)
-  └─► timeout  (timer hit 0 → penalty, deadline reset)
+  └─► timeout  (timer hit 0 → back to start, deadline reset)
 ```
 
 1. **`POST /api/runs/start {difficulty, subject, replay_of?}`** creates a `runs` row. The server chooses a random `seed` (or reuses the seed of `replay_of` for a restart), sets `deadline_at` for timed difficulties, and creates `run_gates` 1..N. Any run the player still has open is marked `abandoned`.
@@ -82,7 +82,7 @@ start ──► (question ──► answer)×N ──► complete
 3. **`POST /api/runs/question {run_id, gate_no}`** picks a question that hasn't been used in this run yet, records `served_at`, and returns `{prompt, options}` **without the answer**.
 4. **`POST /api/runs/answer {run_id, gate_no, attempt_no, choice}`** is rejected if it arrives less than 1 s after the question was served (`TOO_FAST`). It is **idempotent**: `(run_id, gate_no, attempt_no)` is unique, so a retried request gets the stored result back and is never paid twice. If the answer is correct, the gate is marked `cleared` and the ledger is credited.
 5. **`POST /api/runs/complete {run_id}`** checks that every gate is cleared or skipped, that the run took at least `min_seconds`, and that the deadline plus 3 s grace hasn't passed. It then pays the completion reward and the time bonus.
-6. **`POST /api/runs/timeout`** applies the difficulty's penalty, resets the deadline and clears the combo.
+6. **`POST /api/runs/timeout`** resets the deadline and clears the combo. It costs no coins. The difficulty's coin penalty is charged on each **wrong answer** instead (see §4.2).
 
 Every run endpoint returns the current `state()`: `seconds_left`, `freeze_left`, `combo`, `doubler`, and the status of each gate. The client re-syncs its timer from that state, so the browser clock never decides anything.
 
@@ -93,7 +93,7 @@ Every run endpoint returns the current `state()`: `seconds_left`, `freeze_left`,
 | Maze size | 10 | 15 | 20 |
 | Time limit | none | 150 s | 240 s |
 | Gates | 3 | 5 | 7 |
-| Timeout penalty | 0 | 5 coins | 10 coins |
+| Wrong-answer penalty | 0 | 5 coins | 10 coins |
 | Reward multiplier | ×1 | ×1.5 | ×2 |
 | Minimum run time | 6 s | 10 s | 15 s |
 | Fog of war | — | — | radius 3.5 |
@@ -169,7 +169,7 @@ Tests ran against MariaDB 11 and PHP 8.3 + Apache in Docker.
 - Registration, login and throttling, and guards. A player calling an admin endpoint gets 401, and so does a guest calling a player endpoint.
 - Answers: rejected when too fast, idempotent retries, the 2nd/3rd attempt reward rules, rejected answers for unknown gates or options.
 - Completing with gates still pending; completing faster than the difficulty minimum.
-- Deadline + timeout penalty; Time Freeze extending the deadline.
+- Deadline expiry and timeout reset; Time Freeze extending the deadline.
 - Each power-up is consumed exactly once.
 - Replay reuses the seed and creates a new run.
 - Check-in is paid once per day; the spin is capped at 3 per day.
@@ -188,7 +188,33 @@ Tests ran against MariaDB 11 and PHP 8.3 + Apache in Docker.
 
 No console errors except a missing favicon and one deliberate 409 test response.
 
-## 9. Known limitations / follow-ups
+## 9. UI redesign (2026-11-20)
+
+All pages were rebuilt on one design system, [public/assets/css/app.css](../public/assets/css/app.css). It replaces 12 stylesheets plus the inline `<style>` blocks.
+
+- **Colour, 60 · 30 · 10:**
+  - 60%: a neutral background (`--bg`).
+  - 30%: surfaces, borders and text (`--surface`, `--text`).
+  - 10%: one indigo accent (`--accent`). It is used only for primary actions, active navigation, progress and the player in the maze.
+  - Green, red and amber appear only as small feedback (toasts, timer, chips).
+  - Light and dark themes share the same tokens. Dark mode follows the OS setting until the player picks one.
+- **Type and icons:** Inter. One line-icon set (`views/layouts/icons.php`, used through `icon()` / `App.icon()`) replaces the emoji.
+- **Layouts:** public pages share a header and footer. Logged-in pages share an app shell: sidebar, top bar with a live coin balance, and a bottom tab bar on phones. The admin panel uses the same shell.
+- **Behaviour changes:**
+  - Signing up logs you straight in.
+  - The dashboard shows today's real check-in and spin status (`/api/me` now returns `daily`).
+  - Profile editing, avatar upload and password change all live on the Profile page. Password change asks for the current password in a form field instead of a browser prompt.
+  - The game has keyboard shortcuts: `1`–`4` answer a question, or use a power-up when no question is open.
+  - The in-game shop reads prices from the server.
+  - The canvas follows the theme and draws sharply on high-DPI screens.
+- **Removed because they didn't work or weren't real:**
+  - The dashboard's "Weekly Challenge" and external background music.
+  - The admin "Game Appearance" settings, whose save buttons called functions that didn't exist.
+  - The always-green "System Health" panel.
+  - The referral section, which was never implemented.
+- **`database/create_admin.php`** now refuses to touch an admin whose email or username doesn't match exactly. Before, a username clash silently reset another admin's password.
+
+## 10. Known limitations / follow-ups
 
 - **Movement is not validated.** The server enforces the order of gates, answers and timing. It doesn't replay the player's path through the maze. A modified client could skip walking, but it still has to answer every question correctly and wait at least the minimum run time. Server-side path replay would be the next step if needed.
 - **Question bank is small**: 34 questions, so Mixed Mode draws from those 34. *(I said "68" earlier in our conversation. That was wrong.)* Admins can't edit questions from the panel yet.

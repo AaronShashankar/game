@@ -48,6 +48,11 @@ final class ProfileService
             ],
             'wallet' => $this->progression->wallet($userId),
             'xp_chart' => $chart,
+            'daily' => [
+                'checked_in' => $u['last_checkin'] === $today->format('Y-m-d'),
+                'spins_left' => max(0, GameRules::SPINS_PER_DAY - $this->ledger->countToday($userId, 'spin')),
+                'spin_cost'  => GameRules::SPIN_COST,
+            ],
         ];
     }
 

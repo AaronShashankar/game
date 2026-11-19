@@ -1,57 +1,67 @@
 // Player login, admin login and registration forms.
 // The page decides which form is present; each handler only binds if its form exists.
 (function () {
+  const $ = (id) => document.getElementById(id);
+
   function bind(formId, handler) {
-    const form = document.getElementById(formId);
+    const form = $(formId);
     if (form) form.addEventListener('submit', (e) => { e.preventDefault(); handler(form); });
   }
 
-  async function login(form, endpoint, errorId, buttonId, next) {
-    const errorDiv = document.getElementById(errorId);
-    const button = document.getElementById(buttonId);
-    errorDiv.textContent = '';
+  async function busy(button, label, work) {
+    const original = button.textContent;
     button.disabled = true;
-    try {
-      const fd = new FormData(form);
-      await App.api(endpoint, { body: { email: fd.get('email'), password: fd.get('password') } });
-      location.href = App.url(next);
-    } catch (err) {
-      errorDiv.textContent = '❌ ' + err.message;
-    } finally {
-      button.disabled = false;
-    }
+    button.textContent = label;
+    try { await work(); } finally { button.disabled = false; button.textContent = original; }
   }
 
   // Player and admin login pages share the same markup ids.
   bind('loginForm', (form) => {
     const isAdmin = location.pathname.endsWith('/admin');
-    login(form, isAdmin ? '/api/auth/admin-login' : '/api/auth/login',
-          'loginErrorMessage', 'loginButton', isAdmin ? 'admin-panel' : 'dashboard');
+    const error = $('loginErrorMessage');
+    error.textContent = '';
+    const fd = new FormData(form);
+    if (!fd.get('email') || !fd.get('password')) {
+      error.textContent = 'Enter your email and password.';
+      return;
+    }
+    busy($('loginButton'), 'Signing in…', async () => {
+      try {
+        await App.api(isAdmin ? '/api/auth/admin-login' : '/api/auth/login',
+          { body: { email: fd.get('email'), password: fd.get('password') } });
+        location.href = App.url(isAdmin ? 'admin-panel' : 'dashboard');
+      } catch (err) {
+        error.textContent = err.message;
+      }
+    });
   });
 
-  bind('registerForm', async () => {
-    const err = document.getElementById('regError');
-    err.textContent = '';
+  bind('registerForm', () => {
+    const error = $('regError');
+    error.textContent = '';
     const body = {
-      username: document.getElementById('regUsername').value.trim(),
-      email: document.getElementById('regEmail').value.trim(),
-      password: document.getElementById('regPassword').value,
-      confirm: document.getElementById('regConfirm').value,
+      username: $('regUsername').value.trim(),
+      email: $('regEmail').value.trim(),
+      password: $('regPassword').value,
+      confirm: $('regConfirm').value,
     };
     if (!body.username || !body.email || !body.password || !body.confirm) {
-      err.textContent = 'All fields are required.';
+      error.textContent = 'Please fill in every field.';
       return;
     }
     if (body.password !== body.confirm) {
-      err.textContent = "Passwords don't match.";
+      error.textContent = "Passwords don't match.";
       return;
     }
-    try {
-      await App.api('/api/auth/register', { body });
-      alert('✅ Account created! Please log in.');
-      location.href = App.url('user');
-    } catch (e) {
-      err.textContent = e.message;
-    }
+    busy($('regButton'), 'Creating account…', async () => {
+      try {
+        await App.api('/api/auth/register', { body });
+        // Sign straight in with the same credentials.
+        await App.api('/api/auth/login', { body: { email: body.email, password: body.password } });
+        location.href = App.url('dashboard');
+      } catch (e) {
+        error.textContent = e.message;
+      }
+    });
   });
 })();

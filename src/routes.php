@@ -13,22 +13,24 @@ use App\Services\GameRules;
 
 return function (Router $r): void {
     $page = fn (string $view, array $data = []) => fn () => view($view, $data);
+    // Pages that show the game rules or subject list get them from the server.
+    $withRules = fn (string $view) => fn () => view($view, [
+        'difficulties' => GameRules::DIFFICULTIES,
+        'subjects'     => (new QuestionRepository())->subjects(),
+    ]);
 
     // ---- Pages ---------------------------------------------------------------
-    $r->get('/',               $page('landing'));
+    $r->get('/',               $withRules('landing'));
     $r->get('/user',           $page('user/login'));
     $r->get('/register',       $page('user/register'));
-    $r->get('/howtoplay',      $page('user/howtoplay'));
+    $r->get('/howtoplay',      $withRules('user/howtoplay'));
     $r->get('/leaderboard',    $page('user/leaderboard'));
     $r->get('/admin',          $page('admin/login'));
-    $r->get('/dashboard',      $page('user/dashboard'), 'player');
+    $r->get('/dashboard',      $withRules('user/dashboard'), 'player');
     $r->get('/profile',        $page('user/profile'), 'player');
     $r->get('/shop',           $page('user/shop'), 'player');
-    $r->get('/choose-subject', $page('user/choose-subject'), 'player');
-    $r->get('/game', fn () => view('user/game', [
-        'subjects'     => (new QuestionRepository())->subjects(),
-        'difficulties' => GameRules::DIFFICULTIES,
-    ]), 'player');
+    $r->get('/choose-subject', $withRules('user/choose-subject'), 'player');
+    $r->get('/game',           $withRules('user/game'), 'player');
     $r->get('/admin-panel',    $page('admin/panel'), 'admin');
 
     // ---- Auth ----------------------------------------------------------------

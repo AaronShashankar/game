@@ -1,66 +1,96 @@
 <?php
-$pageTitle = 'MazeQuest — Learn & Play';
-require_once __DIR__ . '/layouts/header.php';
+use App\Services\GameRules;
+
+/** @var array $difficulties  GameRules::DIFFICULTIES */
+/** @var string[] $subjects */
+$active = 'home';
+require __DIR__ . '/layouts/header.php';
+$diffCopy = [
+    'Easy'   => 'A small maze with no clock. Good for learning the ropes.',
+    'Medium' => 'A bigger maze against the clock. Wrong answers cost coins.',
+    'Hard'   => 'A large maze in fog of war. You only see what is near you.',
+];
 ?>
 
-  <section class="hero">
-    <h1>Learn & Play in the <span class="highlight">Ultimate Maze</span></h1>
-    <p>Solve puzzles, answer questions, and navigate through challenging mazes. Earn rewards, unlock skins, and compete with friends!</p>
-    <div class="buttons">
-      <a class="btn btn-primary" href="<?= url('user') ?>">▶ Play Now</a>
-      <a class="btn btn-outline" href="<?= url('howtoplay') ?>">Learn How to Play</a>
+<section class="container hero">
+  <div>
+    <p class="eyebrow">An educational maze game</p>
+    <h1>Learn by finding your way out.</h1>
+    <p class="hero-sub">Walk the maze, answer a question at every gate, and reach the exit. Right answers earn coins and XP. Guessing doesn't.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary btn-lg" href="<?= url('register') ?>"><?= icon('play') ?>Start playing — it's free</a>
+      <a class="btn btn-secondary btn-lg" href="<?= url('howtoplay') ?>">How it works</a>
     </div>
+    <dl class="hero-facts">
+      <div><dt><?= count($subjects) ?></dt><dd>Subjects</dd></div>
+      <div><dt><?= count($difficulties) ?></dt><dd>Difficulty levels</dd></div>
+      <div><dt>∞</dt><dd>Mazes, each one new</dd></div>
+    </dl>
+  </div>
+  <div class="hero-art"><?php require __DIR__ . '/partials/maze-art.php'; ?></div>
+</section>
 
-    <div class="stats">
-      <div class="stat"><span class="num purple">10+</span><p>Subjects</p></div>
-      <div class="stat"><span class="num pink">50+</span><p>Levels</p></div>
-      <div class="stat"><span class="num orange">1000+</span><p>Players</p></div>
-    </div>
-  </section>
-
-  <!-- Added modern Features & How to Play section -->
-<section class="modern-section" id="features">
-  <h2>Amazing Features</h2>
-  <p class="section-intro">Discover what makes MazeQuest fun and educational!</p>
-  <div class="grid-cards">
-    <div class="card"><div class="icon purple">🎁</div><div><h3>Daily Rewards</h3><p>Earn coins each day you check in and play!</p></div></div>
-    <div class="card"><div class="icon blue">🧠</div><div><h3>Smart Learning</h3><p>Quiz questions appear at checkpoints to boost knowledge.</p></div></div>
-    <div class="card"><div class="icon pink">🏆</div><div><h3>Global Leaderboard</h3><p>Compete with players worldwide for top ranks.</p></div></div>
-    <div class="card"><div class="icon yellow">👕</div><div><h3>Skins & Themes</h3><p>Customize your maze and avatar with rewards.</p></div></div>
+<section class="container section" id="features">
+  <div class="section-head">
+    <p class="eyebrow">Features</p>
+    <h2 class="section-title">Simple to pick up, rewarding to master</h2>
+  </div>
+  <div class="feature-grid">
+    <div class="card feature"><div class="icon-box"><?= icon('bulb') ?></div><h3>Questions at every gate</h3><p>Gates block the path to the exit. Answer correctly to walk through.</p></div>
+    <div class="card feature"><div class="icon-box"><?= icon('target') ?></div><h3>Fair scoring</h3><p>Full reward on the first try, half on the second, none after that.</p></div>
+    <div class="card feature"><div class="icon-box"><?= icon('flame') ?></div><h3>Daily streaks</h3><p>Check in every day to grow your streak and your bonus.</p></div>
+    <div class="card feature"><div class="icon-box"><?= icon('trophy') ?></div><h3>Leaderboards</h3><p>Climb the all-time and weekly rankings for XP, coins and streaks.</p></div>
   </div>
 </section>
 
-<section class="modern-section" id="howtoplay">
-  <h2>How to Play</h2>
-  <p class="section-intro">Master the maze in 4 simple steps</p>
-  <div class="steps">
-    <div class="step"><div class="num">1</div><div><h4>Select Mode</h4><p>Pick your subject or play in mixed mode.</p></div></div>
-    <div class="step"><div class="num">2</div><div><h4>Navigate</h4><p>Use arrow keys or touch to move through the maze.</p></div></div>
-    <div class="step"><div class="num">3</div><div><h4>Answer</h4><p>Reach checkpoints and solve quiz questions to unlock paths.</p></div></div>
-    <div class="step"><div class="num">4</div><div><h4>Win</h4><p>Reach the exit to earn XP, coins, and unlock new levels!</p></div></div>
+<section class="container section">
+  <div class="section-head">
+    <p class="eyebrow">Difficulty</p>
+    <h2 class="section-title">Pick your challenge</h2>
+    <p class="section-sub">Every level generates a new maze. Harder levels multiply your rewards.</p>
+  </div>
+  <div class="diff-grid">
+    <?php foreach ($difficulties as $name => $d): ?>
+      <div class="card">
+        <div class="row-between">
+          <h3 style="font-size:17px"><?= e($name) ?></h3>
+          <span class="chip<?= $name === 'Medium' ? ' chip-accent' : '' ?>">×<?= rtrim(rtrim(number_format($d['mult'], 1), '0'), '.') ?> rewards</span>
+        </div>
+        <p class="muted mt-8" style="font-size:14px"><?= e($diffCopy[$name] ?? '') ?></p>
+        <dl class="spec">
+          <div><dt>Maze</dt><dd><?= $d['size'] ?> × <?= $d['size'] ?></dd></div>
+          <div><dt>Gates</dt><dd><?= $d['gates'] ?></dd></div>
+          <div><dt>Time limit</dt><dd><?= $d['time'] ? floor($d['time'] / 60) . ':' . str_pad((string) ($d['time'] % 60), 2, '0') : 'None' ?></dd></div>
+          <div><dt>Fog of war</dt><dd><?= $d['fog'] ? 'Yes' : 'No' ?></dd></div>
+        </dl>
+      </div>
+    <?php endforeach; ?>
   </div>
 </section>
-<section id="features2" class="features">
-    <div class="feature-cards">
-      <div class="card easy">
-        <h3>😊 Easy</h3>
-        <p>Small maze, simple questions, no timer</p>
-      </div>
-      <div class="card medium">
-        <h3>⚡ Medium</h3>
-        <p>Bigger maze, timer countdown, penalties</p>
-      </div>
-      <div class="card hard">
-        <h3>🔥 Hard</h3>
-        <p>Large maze, fog of war, strict penalties</p>
-      </div>
-    </div>
-  </section>
 
-  <section id="leader" class="leader">
-    <h2>Top Players</h2>
-    <ol id="leader-list-landing"></ol>
-  </section>
+<section class="container section">
+  <div class="grid grid-2" style="align-items:start; gap:48px">
+    <div>
+      <p class="eyebrow">Leaderboard</p>
+      <h2 class="section-title">Top explorers</h2>
+      <p class="section-sub">Ranked by lifetime XP. Every point was earned in a verified game.</p>
+      <a href="<?= url('leaderboard') ?>" class="btn btn-secondary mt-24">See full leaderboard <?= icon('arrow-right', 'icon-sm') ?></a>
+    </div>
+    <div class="card" style="padding:8px 20px">
+      <div class="list" id="leader-list-landing"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="container section">
+  <div class="cta-band">
+    <div>
+      <h2>Ready to find the exit?</h2>
+      <p>Create an account and get <?= GameRules::STARTER_COINS ?> coins and <?= GameRules::STARTER_POWERUPS ?> of every power-up to start.</p>
+    </div>
+    <a class="btn btn-primary btn-lg" href="<?= url('register') ?>">Create free account</a>
+  </div>
+</section>
 
 <?= page_script('landing') ?>
-<?php require_once __DIR__ . '/layouts/footer.php'; ?>
+<?php require __DIR__ . '/layouts/footer.php'; ?>

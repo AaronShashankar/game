@@ -2,32 +2,38 @@
 // /api/admin/* endpoint require an admin session) — nothing here decides it.
 const esc = (v) => App.escape(v);
 const $ = (id) => document.getElementById(id);
+const when = (s) => new Date(String(s).replace(' ', 'T'));
+const fmt = (n) => Number(n || 0).toLocaleString();
 
 function showError(message) {
-  alert('❌ ' + message);
+  App.toast(message, 'danger');
 }
 
 // ---- Tabs ---------------------------------------------------------------------
-function switchTab(tabName) {
-  document.querySelectorAll('.tab-content').forEach((t) => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-  $(tabName + '-tab').classList.add('active');
-  if (window.event?.target) window.event.target.classList.add('active');
-  ({ dashboard: loadDashboardData, users: loadUsersTable, security: loadSecurityLogs, analytics: loadAnalytics }[tabName] || (() => {}))();
-}
+const LOADERS = { dashboard: loadDashboardData, users: loadUsersTable, security: loadSecurityLogs, analytics: loadAnalytics };
+let currentTab = 'dashboard';
 
-// ---- Dashboard ----------------------------------------------------------------
+function switchTab(tabName) {
+  currentTab = tabName;
+  document.querySelectorAll('.tab-content').forEach((t) => t.classList.toggle('active', t.id === tabName + '-tab'));
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('is-active', b.dataset.tab === tabName));
+  $('tabTitle').textContent = document.querySelector(`.tab-btn[data-tab="${tabName}"] span`).textContent;
+  (LOADERS[tabName] || (() => {}))();
+}
+document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+// ---- Overview -------------------------------------------------------------------
 async function loadDashboardData() {
   try {
     const { stats } = await App.api('/api/admin/stats');
-    $('totalUsers').textContent = stats.totalUsers;
-    $('totalGames').textContent = stats.totalGames;
-    $('totalCoins').textContent = stats.totalCoins;
-    $('activeUsers').textContent = stats.activeUsers;
+    $('totalUsers').textContent = fmt(stats.totalUsers);
+    $('totalGames').textContent = fmt(stats.totalGames);
+    $('totalCoins').textContent = fmt(stats.totalCoins);
+    $('activeUsers').textContent = fmt(stats.activeUsers);
     $('avgLevel').textContent = stats.avgLevel;
-    $('totalXP').textContent = stats.totalXP;
-    $('gatesOpened').textContent = stats.totalGates;
-    $('correctAnswers').textContent = stats.totalCorrect;
+    $('totalXP').textContent = fmt(stats.totalXP);
+    $('gatesOpened').textContent = fmt(stats.totalGates);
+    $('correctAnswers').textContent = fmt(stats.totalCorrect);
     loadRecentActivity();
   } catch (e) {
     showError('Failed to load dashboard data: ' + e.message);
@@ -38,43 +44,41 @@ async function loadRecentActivity() {
   const box = $('recentActivity');
   try {
     const { activity } = await App.api('/api/admin/activity');
-    box.innerHTML = activity.length ? '' : '<div class="log-entry">No recent activity yet.</div>';
-    activity.forEach((a) => {
-      const div = document.createElement('div');
-      div.className = `log-entry log-${a.type === 'info' ? 'warning' : 'success'}`;
-      div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
-          <span>${esc(a.message)}</span><small style="color:#aaa;">${esc(new Date(a.time.replace(' ', 'T')).toLocaleString())}</small></div>`;
-      box.appendChild(div);
-    });
+    box.innerHTML = activity.length ? activity.map((a) => `
+      <div class="log-entry">
+        <span class="dot ${a.type === 'info' ? 'dot-accent' : 'dot-success'}"></span>
+        <div class="grow">${esc(a.message)}</div>
+        <time>${esc(when(a.time).toLocaleString())}</time>
+      </div>`).join('') : '<div class="empty">No activity yet.</div>';
   } catch (e) {
-    box.innerHTML = '<div class="log-entry log-error">Failed to load recent activity.</div>';
+    box.innerHTML = '<div class="empty">Failed to load recent activity.</div>';
   }
 }
 
-// ---- Users --------------------------------------------------------------------
+// ---- Players ------------------------------------------------------------------
 async function loadUsersTable() {
   const body = $('usersTableBody');
-  body.innerHTML = '<tr><td colspan="11" class="loading"><div class="spinner"></div><p>Loading users...</p></td></tr>';
   try {
     const { users } = await App.api('/api/admin/users');
     if (!users.length) {
-      body.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:#aaa;">No players yet.</td></tr>';
+      body.innerHTML = '<tr><td colspan="11" class="empty">No players yet.</td></tr>';
       return;
     }
     body.innerHTML = '';
     users.forEach((u) => {
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td>${esc(u.username)}</td><td>${u.level}</td><td>${u.coins}</td><td>${u.xp}</td><td>${u.streak}</td>
-        <td>${u.total_games}</td><td>${u.powerups_used}</td><td>${u.correct_answers}</td><td>${u.wrong_answers}</td>
-        <td>${esc(new Date(u.last_active.replace(' ', 'T')).toLocaleDateString())}</td>
-        <td><div class="action-btns"><button class="btn btn-danger btn-small">Delete</button></div></td>`;
+        <td><strong style="font-weight:500">${esc(u.username)}</strong></td>
+        <td class="num">${u.level}</td><td class="num">${fmt(u.coins)}</td><td class="num">${fmt(u.xp)}</td><td class="num">${u.streak}</td>
+        <td class="num">${u.total_games}</td><td class="num">${u.powerups_used}</td><td class="num">${u.correct_answers}</td><td class="num">${u.wrong_answers}</td>
+        <td class="subtle">${u.last_active ? esc(when(u.last_active).toLocaleDateString()) : '—'}</td>
+        <td style="text-align:right"><button class="btn btn-danger btn-sm">${App.icon('trash', 'icon-sm')}Delete</button></td>`;
       // Username goes through a closure, not an inline onclick string.
       row.querySelector('button').addEventListener('click', () => deleteUser(u.id, u.username));
       body.appendChild(row);
     });
   } catch (e) {
-    body.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:20px;color:#ff6b6b;">❌ ${esc(e.message)}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="11" class="empty">${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -90,10 +94,9 @@ $('addUserForm').addEventListener('submit', async (e) => {
         level: Number($('initialLevel').value || 1),
       },
     });
-    alert('✅ User added');
+    App.toast('Player added', 'success');
     closeAddUserModal();
-    loadUsersTable();
-    loadDashboardData();
+    refreshData();
   } catch (err) {
     showError(err.message);
   }
@@ -103,8 +106,8 @@ async function deleteUser(userId, username) {
   if (!confirm(`Delete player "${username}" and all their progress? This cannot be undone.`)) return;
   try {
     await App.api('/api/admin/users/delete', { body: { user_id: userId } });
+    App.toast(`Deleted ${username}`, 'success');
     loadUsersTable();
-    loadDashboardData();
   } catch (e) {
     showError(e.message);
   }
@@ -119,7 +122,7 @@ function checkPasswordStrength() {
   if (/\d/.test(pw)) strength++;
   if (/[^a-zA-Z\d]/.test(pw)) strength++;
   $('passwordStrength').className = 'password-strength ' +
-    ['strength-weak', 'strength-weak', 'strength-medium', 'strength-strong', 'strength-very-strong'][strength];
+    (pw ? ['strength-weak', 'strength-weak', 'strength-medium', 'strength-strong', 'strength-very-strong'][strength] : '');
 }
 
 async function changeAdminPassword() {
@@ -129,8 +132,9 @@ async function changeAdminPassword() {
   if (next.length < 8) return showError('Password must be at least 8 characters long.');
   try {
     await App.api('/api/admin/password', { body: { current_password: current, new_password: next } });
-    alert('✅ Admin password updated');
+    App.toast('Admin password updated', 'success');
     ['currentPassword', 'newAdminPassword', 'confirmPassword'].forEach((id) => ($(id).value = ''));
+    checkPasswordStrength();
   } catch (e) {
     showError(e.message);
   }
@@ -138,21 +142,22 @@ async function changeAdminPassword() {
 
 async function loadSecurityLogs() {
   const box = $('securityLogs');
-  box.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading security logs...</p></div>';
   try {
     const { logs } = await App.api('/api/admin/security-logs');
-    box.innerHTML = logs.length ? '' : '<div class="log-entry">No security events logged yet.</div>';
-    logs.forEach((l) => {
-      const cls = /failed|rejected/.test(l.event) ? 'log-error' : /success/.test(l.event) ? 'log-success' : 'log-warning';
-      const div = document.createElement('div');
-      div.className = 'log-entry ' + cls;
-      div.innerHTML = `<div><strong>${esc(l.event)}</strong> — ${esc(l.user || 'unknown')}
-          ${l.ip ? `<small>(${esc(l.ip)})</small>` : ''} ${l.detail ? `<small>${esc(l.detail)}</small>` : ''}</div>
-        <small>${esc(new Date(l.timestamp.replace(' ', 'T')).toLocaleString())}</small>`;
-      box.appendChild(div);
-    });
+    box.innerHTML = logs.length ? logs.map((l) => {
+      const dot = /failed|rejected/.test(l.event) ? 'dot-danger' : /success/.test(l.event) ? 'dot-success' : '';
+      return `
+        <div class="log-entry">
+          <span class="dot ${dot}"></span>
+          <div class="grow">
+            <div><strong style="font-weight:500">${esc(l.event)}</strong> <span class="muted">· ${esc(l.user || 'unknown')}</span></div>
+            <div class="subtle" style="font-size:13px">${[l.ip, l.detail].filter(Boolean).map(esc).join(' · ')}</div>
+          </div>
+          <time>${esc(when(l.timestamp).toLocaleString())}</time>
+        </div>`;
+    }).join('') : '<div class="empty">No security events logged yet.</div>';
   } catch (e) {
-    box.innerHTML = '<div class="log-entry log-error">Failed to load security logs.</div>';
+    box.innerHTML = '<div class="empty">Failed to load security logs.</div>';
   }
 }
 
@@ -160,25 +165,22 @@ async function loadSecurityLogs() {
 async function loadAnalytics() {
   try {
     const { analytics: a } = await App.api('/api/admin/analytics');
-    $('avgGameDuration').value = a.avgGameDuration;
-    $('successRate').value = a.successRate;
-    $('popularSubject').value = a.popularSubject;
-    $('dailyActiveUsers').value = a.dailyActiveUsers;
-    $('retentionRate').value = a.completionRate;
-    $('avgSessionTime').value = a.hardestQuestions[0]
-      ? `${a.hardestQuestions[0].prompt} (${a.hardestQuestions[0].pct}% correct)` : '—';
+    $('avgGameDuration').textContent = a.avgGameDuration;
+    $('successRate').textContent = a.successRate;
+    $('popularSubject').textContent = a.popularSubject;
+    $('dailyActiveUsers').textContent = a.dailyActiveUsers;
+    $('retentionRate').textContent = a.completionRate;
+    const q = a.hardestQuestions[0];
+    $('avgSessionTime').textContent = q ? `${q.prompt} — ${q.pct}% correct` : 'Not enough answers yet';
   } catch (e) {
     showError('Failed to load analytics: ' + e.message);
   }
 }
 
-// ---- System -------------------------------------------------------------------
+// ---- Data ---------------------------------------------------------------------
 function refreshData() {
-  loadDashboardData();
+  (LOADERS[currentTab] || loadDashboardData)();
 }
-
-// Backup = download a full JSON export.
-const backupData = () => exportData();
 
 async function exportData() {
   try {
@@ -194,16 +196,16 @@ async function exportData() {
 
 // ---- Modal --------------------------------------------------------------------
 function openAddUserModal() {
-  $('addUserModal').style.display = 'flex';
+  $('addUserModal').classList.add('show');
+  $('newUsername').focus();
 }
 
 function closeAddUserModal() {
-  $('addUserModal').style.display = 'none';
+  $('addUserModal').classList.remove('show');
   $('addUserForm').reset();
 }
 
-window.addEventListener('click', (e) => {
-  if (e.target === $('addUserModal')) closeAddUserModal();
-});
+$('addUserModal').addEventListener('click', (e) => { if (e.target.id === 'addUserModal') closeAddUserModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAddUserModal(); });
 
-document.addEventListener('DOMContentLoaded', loadDashboardData);
+loadDashboardData();

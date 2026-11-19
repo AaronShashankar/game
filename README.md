@@ -51,6 +51,7 @@ docker compose exec web php database/create_admin.php admin@example.com admin 'c
 
 - Game: http://localhost:8080 (register a player at `/register`)
 - Admin: http://localhost:8080/admin
+- phpMyAdmin: http://localhost:8082 (logs in automatically as `maze`; the `mazequest` database is on the left)
 - Database (for a GUI client): `127.0.0.1:3307`, user `maze`, password `maze`, db `mazequest`
 
 Code is mounted live, so edits show up on refresh. Restarting the `web` container applies new migrations (`docker compose restart web`). `docker compose down` stops everything and keeps the data; `docker compose down -v` also wipes the database.
