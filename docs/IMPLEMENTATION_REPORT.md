@@ -224,3 +224,7 @@ All pages were rebuilt on one design system, [public/assets/css/app.css](../publ
 - **`docs/legacy/`** describes the old `api/*.php` functions and is out of date.
 - No automated tests are committed to the repo. The API test script was a one-off harness. Adding PHPUnit and a CI job would be the obvious next step.
 - Avatars are stored as data URLs in the DB (≤300 KB). Move them to file or object storage if there will be many users.
+
+setup admin password
+- docker compose exec web php database/create_admin.php aaronshasankar@gmail.com admin 'your-new-password'
+
