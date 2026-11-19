@@ -1,0 +1,55 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 2, process 2.3: grade an answer.
+flowchart LR
+  P["Player<br/>(browser)"]:::entity
+  X31("3.1<br/>Credit once"):::external
+  X32("3.2<br/>Penalise"):::external
+  X51("5.1<br/>Update review box"):::external
+  X65("6.5<br/>Unlock achievements"):::external
+
+  A1("2.3.1<br/>Look up<br/>attempt"):::process
+  A2("2.3.2<br/>Validate<br/>attempt"):::process
+  A3("2.3.3<br/>Compare with<br/>correct option"):::process
+  A4("2.3.4<br/>Score correct<br/>answer"):::process
+  A5("2.3.5<br/>Apply wrong<br/>answer"):::process
+  A6("2.3.6<br/>Record answer"):::process
+  A7("2.3.7<br/>Build result"):::process
+
+  D1[("D1 users")]:::store
+  D3[("D3 questions")]:::store
+  D4[("D4 runs, run_gates,<br/>run_answers")]:::store
+  D11[("D11 security_log")]:::store
+
+  P -- "run, gate, attempt,<br/>option" --> A1
+  D4 -- "stored answer for<br/>(run, gate, attempt)" --> A1
+  A1 -- "already answered:<br/>stored outcome" --> A7
+  A1 -- "new attempt" --> A2
+  D4 -- "gate status, question,<br/>attempts, served time,<br/>deadline" --> A2
+  A2 -- "TOO_FAST, WRONG_ATTEMPT,<br/>INVALID_OPTION ..." --> D11
+  A2 -- "valid attempt" --> A3
+  D3 -- "answer_idx" --> A3
+  A3 -- "correct" --> A4
+  A3 -- "wrong" --> A5
+
+  A4 -- "gate coins (attempt, combo,<br/>doubler), gate XP" --> X31
+  A4 -- "gate cleared, combo + 1,<br/>best combo, doubler off" --> D4
+  A5 -- "difficulty penalty" --> X32
+  A5 -- "attempts + 1, question cleared,<br/>combo reset" --> D4
+
+  A4 --> A6
+  A5 --> A6
+  A6 -- "answer row" --> D4
+  A6 -- "correct or wrong count" --> D1
+  A6 -- "user, question, outcome" --> X51
+  A6 -- "updated run" --> X65
+  X65 -- "new achievements" --> A7
+  D3 -- "correct index,<br/>explanation" --> A7
+  A7 -- "correct?, coins, XP, combo,<br/>correct option, explanation,<br/>wallet" --> P
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

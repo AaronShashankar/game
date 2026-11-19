@@ -1,0 +1,63 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 1, process 6.0: competition and achievements.
+flowchart LR
+  G["Guest"]:::entity
+  P["Player"]:::entity
+  X2("2.0<br/>Play a maze run"):::external
+  X3("3.0<br/>Award progression"):::external
+
+  P61("6.1<br/>Rank<br/>leaderboards"):::process
+  P62("6.2<br/>Issue daily<br/>maze"):::process
+  P63("6.3<br/>Settle weekly<br/>prizes"):::process
+  P64("6.4<br/>Manage<br/>challenges"):::process
+  P65("6.5<br/>Unlock<br/>achievements"):::process
+
+  D1[("D1 users")]:::store
+  D3[("D3 questions")]:::store
+  D4[("D4 runs")]:::store
+  D5[("D5 ledger")]:::store
+  D8[("D8 daily_mazes")]:::store
+  D9[("D9 weekly_settlements,<br/>weekly_rewards")]:::store
+  D10[("D10 user_achievements")]:::store
+
+  G -- "board type" --> P61
+  P -- "board type" --> P61
+  D1 -- "XP, coins, level, streak" --> P61
+  D5 -- "XP since Monday" --> P61
+  D4 -- "today's finish times" --> P61
+  P61 -- "ranked rows" --> G
+  P61 -- "ranked rows" --> P
+
+  P62 <-- "one seed per day<br/>(INSERT IGNORE)" --> D8
+  P62 -- "today's seed" --> X2
+  D4 -- "your daily run, finishers" --> P62
+  P62 -- "daily status, top times" --> P
+
+  P -- "profile load or<br/>weekly board" --> P63
+  D5 -- "last week's XP" --> P63
+  P63 <-- "settled weeks, winners" --> D9
+  P63 -- "300 / 200 / 100 coins" --> X3
+  P63 -- "last week's winners" --> P
+
+  X2 -- "completed run" --> P64
+  P64 -- "share code" --> D4
+  G -- "challenge code" --> P64
+  D4 -- "source run, player" --> P64
+  P64 -- "challenge details" --> G
+  P64 -- "source run" --> X2
+
+  X2 -- "answer or run outcome" --> P65
+  X3 -- "level or streak changed" --> P65
+  D1 -- "level, coins, streak,<br/>correct answers" --> P65
+  D4 -- "completed subjects" --> P65
+  D3 -- "all subjects" --> P65
+  P65 -- "unlock (once)" --> D10
+  P65 -- "new achievements" --> P
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

@@ -1,0 +1,46 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 2, process 2.7: complete a run.
+flowchart LR
+  P["Player<br/>(browser)"]:::entity
+  X31("3.1<br/>Credit once"):::external
+  X65("6.5<br/>Unlock achievements"):::external
+
+  C1("2.7.1<br/>Validate<br/>finish"):::process
+  C2("2.7.2<br/>Compute<br/>rewards"):::process
+  C3("2.7.3<br/>Pay rewards"):::process
+  C4("2.7.4<br/>Close run"):::process
+  C5("2.7.5<br/>Build summary"):::process
+  C6("2.7.6<br/>Assign share<br/>code"):::process
+  C7("2.7.7<br/>Compare and<br/>rank"):::process
+
+  D3[("D3 questions")]:::store
+  D4[("D4 runs, run_gates,<br/>run_answers")]:::store
+  D11[("D11 security_log")]:::store
+
+  P -- "run id" --> C1
+  D4 -- "pending gates, elapsed,<br/>deadline (run locked)" --> C1
+  C1 -- "GATES_PENDING,<br/>TOO_FAST" --> D11
+  C1 -- "valid finish" --> C2
+  D4 -- "difficulty, seconds left,<br/>pickups mask, mode" --> C2
+  C2 -- "completion (x multiplier) + time bonus,<br/>5 per pickup, daily bonus" --> C3
+  C3 -- "complete, pickups,<br/>daily (once each)" --> X31
+  C3 --> C4
+  C4 -- "status completed,<br/>duration, totals" --> D4
+  C4 --> C5
+  D4 -- "answers in this run" --> C5
+  D3 -- "prompts, options,<br/>explanations" --> C5
+  C5 --> C6
+  C6 -- "8-character code<br/>(not for daily)" --> D4
+  C6 --> C7
+  D4 -- "friend's time or<br/>today's finishers" --> C7
+  C7 -- "run, wrong, skipped,<br/>challenge won" --> X65
+  X65 -- "new achievements" --> C7
+  C7 -- "rewards, summary, missed questions,<br/>share code, rank or result, wallet" --> P
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

@@ -281,7 +281,7 @@ All pages were rebuilt on one design system, [public/assets/css/app.css](../publ
 - **Sound.** Short WebAudio tones, so there are no files to download. The mute choice is saved per device.
 
 ### 10.3 Retention
-- **13 achievements.** First clear, Flawless, Combo ×5, Hard clear, Speedrunner, Daily player, Challenge won, All-rounder, Scholar, Level 5/10, Rich, 10-day streak. They are checked after answers, completions, check-ins and level-ups, and newly unlocked ones show as toasts.
+- **13 achievements.** First clear, Flawless, Combo ×5, Hard clear, Speedrunner, Daily player, Challenge won, All-rounder, Scholar, Level 5/10, Rich, 10-day streak. They are checked after answers, completed runs and check-ins, and newly unlocked ones show as toasts.
 - **Challenge a friend.**
   - Every completed run except the daily maze gets an 8-character share code. The daily maze has none, because the link would give away that day's maze and questions. The code avoids look-alike characters such as 0/O and 1/I.
   - `/challenge?code=` is public. Guests are sent to register or log in, then straight into the game (`?next=`, same-site paths only).

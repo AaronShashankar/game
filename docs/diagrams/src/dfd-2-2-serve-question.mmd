@@ -1,0 +1,52 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 2, process 2.2: serve a question for a gate.
+flowchart LR
+  P["Player<br/>(browser)"]:::entity
+
+  Q1("2.2.1<br/>Check run<br/>and gate"):::process
+  Q2("2.2.2<br/>Reuse question<br/>already served"):::process
+  Q3("2.2.3<br/>Copy friend's<br/>question"):::process
+  Q4("2.2.4<br/>Pick in daily<br/>seeded order"):::process
+  Q5("2.2.5<br/>Pick due<br/>review"):::process
+  Q6("2.2.6<br/>Pick random,<br/>prefer difficulty"):::process
+  Q7("2.2.7<br/>Record served<br/>question"):::process
+  Q8("2.2.8<br/>Hide the<br/>answer"):::process
+
+  D3[("D3 questions")]:::store
+  D4[("D4 runs, run_gates,<br/>run_answers")]:::store
+  D7[("D7 question_reviews")]:::store
+  D11[("D11 security_log")]:::store
+
+  P -- "run id, gate number" --> Q1
+  D4 -- "run (locked), gate (locked)" --> Q1
+  Q1 -- "invalid gate" --> D11
+  Q1 -- "gate already has<br/>a question" --> Q2
+  Q1 -- "challenge run" --> Q3
+  Q1 -- "daily run" --> Q4
+  Q1 -- "normal run,<br/>fewer than 2 reviews" --> Q5
+
+  D4 -- "friend's question at<br/>this gate and attempt" --> Q3
+  Q3 -- "friend never got<br/>this attempt" --> Q6
+
+  D3 -- "unused questions,<br/>MD5(seed:id) order" --> Q4
+
+  D7 -- "oldest due review<br/>in subject" --> Q5
+  Q5 -- "none due" --> Q6
+  D3 -- "unused questions,<br/>matching difficulty first" --> Q6
+
+  D3 -- "question" --> Q2
+  Q2 --> Q8
+  Q3 -- "chosen question" --> Q7
+  Q4 -- "chosen question" --> Q7
+  Q5 -- "chosen question,<br/>is_review" --> Q7
+  Q6 -- "chosen question" --> Q7
+  Q7 -- "question_id, served_at,<br/>reviews_served" --> D4
+  Q7 --> Q8
+  Q8 -- "prompt, options,<br/>attempt number" --> P
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

@@ -1,0 +1,39 @@
+%% Sequence: walking into a gate, answering, and getting paid.
+sequenceDiagram
+  autonumber
+  actor P as Player
+  participant B as Browser (game.js)
+  participant R as Router + RunController
+  participant S as RunService
+  participant DB as MariaDB
+
+  P->>B: walks into gate 3
+  B->>R: POST /api/runs/question {run_id, gate_no: 3}
+  R->>S: question()
+  S->>DB: BEGIN, then SELECT run, gate FOR UPDATE
+  S->>DB: pick question (review, daily order, friend's, or random)
+  S->>DB: UPDATE run_gates SET question_id, served_at = NOW(3), then COMMIT
+  S-->>B: prompt + options (no answer)
+  B->>P: shows question (options shuffled)
+  P->>B: picks an option
+  Note over B: waits until at least 1.1 s after the question appeared
+  B->>R: POST /api/runs/answer {run_id, gate_no, attempt_no, option}
+  R->>S: answer()
+  S->>DB: BEGIN, then SELECT run FOR UPDATE
+  S->>DB: same (run, gate, attempt) answered before?
+  alt retry of an answer already stored
+    S-->>B: stored outcome (no second payment)
+  else new attempt
+    S->>DB: SELECT gate FOR UPDATE, check deadline, attempt, 1 s rule
+    alt correct
+      S->>DB: INSERT IGNORE ledger (gate, run:id:gate:3)
+      S->>DB: UPDATE users coins, xp, level
+      S->>DB: gate cleared, combo + 1
+    else wrong
+      S->>DB: penalty (never below 0), gate question cleared
+    end
+    S->>DB: INSERT run_answers, update review box, check achievements
+    S->>DB: COMMIT
+    S-->>B: correct?, coins, XP, correct option, explanation, wallet
+  end
+  B->>P: highlights right answer, explanation, sound

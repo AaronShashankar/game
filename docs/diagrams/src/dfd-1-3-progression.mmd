@@ -1,0 +1,53 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 1, process 3.0: award progression and daily rewards.
+flowchart LR
+  P["Player"]:::entity
+  X["1.0, 2.0, 6.0, 7.0<br/>(reward sources)"]:::external
+  X4("4.0<br/>Shop"):::external
+  X6("6.0<br/>Achievements"):::external
+
+  P31("3.1<br/>Credit once<br/>(ledger)"):::process
+  P32("3.2<br/>Spend or<br/>penalise"):::process
+  P33("3.3<br/>Daily<br/>check-in"):::process
+  P34("3.4<br/>Spin<br/>wheel"):::process
+  P35("3.5<br/>Report<br/>wallet"):::process
+
+  D1[("D1 users")]:::store
+  D5[("D5 ledger")]:::store
+  D6[("D6 inventory")]:::store
+
+  X -- "coins, XP,<br/>reason, ref" --> P31
+  P31 -- "INSERT IGNORE<br/>(user, reason, ref)" --> D5
+  P31 -- "coins, XP, new level" --> D1
+
+  X -- "wrong-answer penalty" --> P32
+  X4 -- "price" --> P32
+  P32 -- "coins - cost<br/>(only if affordable)" --> D1
+  P32 -- "debit entry" --> D5
+
+  P -- "check in" --> P33
+  D1 -- "last check-in, streak" --> P33
+  D6 -- "freezes held" --> P33
+  P33 -- "freezes used" --> D6
+  P33 -- "new streak, date" --> D1
+  P33 -- "check-in reward" --> P31
+  P33 -- "streak changed" --> X6
+
+  P -- "spin" --> P34
+  D5 -- "spins today" --> P34
+  P34 -- "5-coin cost" --> P32
+  P34 -- "coin prize" --> P31
+  P34 -- "item prize" --> D6
+  P34 -- "segment, prize" --> P
+
+  D1 -- "coins, XP, level,<br/>streak, equipped" --> P35
+  D6 -- "inventory" --> P35
+  P35 -- "wallet" --> P
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

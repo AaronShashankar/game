@@ -1,0 +1,38 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 1, process 5.0: track learning (spaced repetition and mastery).
+flowchart LR
+  P["Player"]:::entity
+  X23("2.3<br/>Grade answer"):::external
+  X22("2.2<br/>Serve question"):::external
+
+  P51("5.1<br/>Update<br/>review box"):::process
+  P52("5.2<br/>Select due<br/>review"):::process
+  P53("5.3<br/>Compute<br/>mastery"):::process
+  P54("5.4<br/>Count reviews"):::process
+
+  D3[("D3 questions")]:::store
+  D4[("D4 run_answers")]:::store
+  D7[("D7 question_reviews")]:::store
+
+  X23 -- "user, question,<br/>right or wrong" --> P51
+  P51 <-- "box, due date" --> D7
+  P51 -- "was it a review?" --> X23
+
+  X22 -- "user, subject, run" --> P52
+  D7 -- "due rows,<br/>oldest first" --> P52
+  P52 -- "review question<br/>(max 2 per run)" --> X22
+
+  D4 -- "answers per subject" --> P53
+  D3 -- "active questions<br/>per subject" --> P53
+  P53 -- "mastery %, accuracy" --> P
+
+  D7 -- "due now, learning" --> P54
+  P54 -- "reviews due" --> P
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

@@ -27,6 +27,19 @@ An educational maze game. Walk through a maze, answer a quiz question at each ga
 
 The **server** owns every reward. The browser draws the maze and sends what the player did (which gate, which answer, which power-up). The server checks it, scores it and records it in a ledger. A player cannot give themselves coins or XP from the browser console. See [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) for the design and the reasons behind it.
 
+## Documentation
+
+| | |
+|---|---|
+| [docs/project_overview.md](docs/project_overview.md) | What MazeQuest is, who it's for, how to run it |
+| [docs/feature.md](docs/feature.md) | Every feature with its exact rules |
+| [docs/architecture.md](docs/architecture.md) | Layers, request lifecycle, design decisions |
+| [docs/systemdesign.md](docs/systemdesign.md) | Requirements, context diagram, DFD 0/1/2, flowchart, API, security, scaling, review findings |
+| [docs/database.md](docs/database.md) | ER diagram, tables, keys, invariants, migrations |
+| [docs/algorithm.md](docs/algorithm.md) | Maze generation, question selection, spaced repetition, scoring |
+| [docs/diagrams/](docs/diagrams/README.md) | All diagrams (SVG, PNG, Mermaid source) |
+| [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) | History of the changes and why |
+
 ## Tech
 
 - PHP 8.1+ (no framework, no Composer; small built-in autoloader)

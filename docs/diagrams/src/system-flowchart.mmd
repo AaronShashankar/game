@@ -1,0 +1,49 @@
+%% System flowchart: a player's journey through one maze, with the server checks.
+flowchart TD
+  S([Start]) --> V[Open MazeQuest]
+  V --> HA{Signed in?}
+  HA -- "no" --> AC{Has an account?}
+  AC -- "no" --> REG[Register:<br/>100 coins + 3 of each power-up]
+  AC -- "yes" --> LOG[Log in]
+  REG --> DASH
+  LOG --> THR{Too many failed<br/>logins from this IP?}
+  THR -- "yes" --> WAIT[Wait and try again] --> LOG
+  THR -- "no" --> DASH
+  HA -- "yes" --> DASH[Dashboard:<br/>check-in, spin, daily maze,<br/>learning, weekly prizes]
+
+  DASH --> MODE{Which maze?}
+  MODE -- "normal" --> PICK[Choose difficulty<br/>and subject]
+  MODE -- "daily" --> DD{Daily maze already<br/>finished today?}
+  DD -- "yes" --> DASH
+  DD -- "no" --> START
+  MODE -- "challenge link" --> CV{Valid code and<br/>not your own maze?}
+  CV -- "no" --> DASH
+  CV -- "yes" --> START
+  PICK --> START[Server creates run:<br/>seed, gates, deadline]
+
+  START --> GEN[Browser builds maze from seed:<br/>DFS maze, BFS path, gates, pickups]
+  GEN --> MOVE[Move with keys, swipe or arrow pad]
+  MOVE --> TIME{Timer ran out?}
+  TIME -- "yes" --> TO[Back to start,<br/>server gives a fresh deadline] --> MOVE
+  TIME -- "no" --> CELL{What is in the<br/>next cell?}
+  CELL -- "wall" --> MOVE
+  CELL -- "coin" --> PU[Record pickup<br/>paid at the finish] --> MOVE
+  CELL -- "closed gate" --> Q[Server serves a question:<br/>review, daily order, friend's,<br/>or random by difficulty]
+  Q --> ANS[Player answers]
+  ANS --> CHK{Server: valid and<br/>at least 1s after serving?}
+  CHK -- "no" --> REJ[Rejected and logged] --> MOVE
+  CHK -- "yes" --> OK{Correct?}
+  OK -- "yes" --> PAY[Gate opens: coins and XP,<br/>combo + 1] --> MOVE
+  OK -- "no" --> PEN[Penalty, show right answer<br/>and explanation, review scheduled]
+  PEN --> W3{Three wrong<br/>in a row?}
+  W3 -- "yes" --> BACK[Back to the start] --> MOVE
+  W3 -- "no" --> MOVE
+  CELL -- "exit" --> FIN{Server: every gate cleared<br/>and minimum time passed?}
+  FIN -- "no" --> MOVE
+  FIN -- "yes" --> REW[Pay completion, time bonus,<br/>pickups, daily bonus]
+  REW --> SUM[Summary: time, accuracy, combo,<br/>missed questions, rank or result,<br/>new achievements, share code]
+  SUM --> NEXT{Next?}
+  NEXT -- "next maze or replay" --> START
+  NEXT -- "challenge a friend" --> SHARE[Share link] --> DASH
+  NEXT -- "dashboard" --> DASH
+  DASH --> E([Log out])

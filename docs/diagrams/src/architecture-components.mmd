@@ -1,0 +1,51 @@
+%% Component view: layers inside the PHP app and what each talks to.
+flowchart TB
+  subgraph Browser["Browser"]
+    direction LR
+    Views["Server-rendered pages<br/>(views/*.php)"]
+    JS["Page scripts<br/>game.js, dashboard.js, shop.js ..."]
+    Lib["Shared libs<br/>api.js, sound.js"]
+  end
+
+  subgraph Web["Apache + PHP 8.3 (one process per request)"]
+    direction TB
+    FC["Front controller<br/>public/index.php"]
+    R["Router + guards<br/>(public / player / admin)"]
+    subgraph C["Controllers: read input, return arrays"]
+      direction LR
+      AuthC["AuthController"]
+      PlayerC["PlayerController"]
+      RunC["RunController"]
+      AdminC["AdminController"]
+    end
+    subgraph SV["Services: rules and transactions"]
+      direction LR
+      RunS["RunService"]
+      ProgS["ProgressionService<br/>(only writer of coins / XP)"]
+      RewS["RewardService"]
+      ShopS["ShopService"]
+      LearnS["LearningService"]
+      AchS["AchievementService"]
+      CompS["DailyService, ChallengeService,<br/>WeeklyRewardService"]
+      AdmS["AdminService, QuestionService,<br/>AuthService, ProfileService"]
+      Rules["GameRules<br/>(all numbers)"]
+    end
+    subgraph RP["Repositories: all SQL"]
+      direction LR
+      Repos["User, Run, Question, Review,<br/>Ledger, Shop, Admin, SecurityLog"]
+    end
+    Sess["PHP session<br/>(file-based)"]
+  end
+
+  DB[("MariaDB / MySQL<br/>InnoDB")]
+
+  Views --> JS
+  JS --> Lib
+  Lib -- "JSON over fetch<br/>(same-origin cookie)" --> FC
+  Views -. "page request" .-> FC
+  FC --> R
+  R --> C
+  R -. "reads" .-> Sess
+  C --> SV
+  SV --> RP
+  RP -- "PDO, native prepared<br/>statements" --> DB

@@ -1,0 +1,174 @@
+%% Entity-relationship diagram. Solid lines are enforced foreign keys;
+%% dotted lines are relationships the application keeps without a FK constraint.
+erDiagram
+  users ||--o{ runs : plays
+  runs ||--|{ run_gates : "has 3 to 7"
+  runs ||--o{ run_answers : records
+  run_gates ||..o{ run_answers : "attempts at"
+  questions |o..o{ run_gates : "served at"
+  questions ||..o{ run_answers : "answered in"
+  users ||--o{ ledger : "balance history"
+  users ||--o{ inventory : owns
+  items ||..o{ inventory : "held as"
+  items |o..o{ users : "equipped by"
+  users ||--o{ question_reviews : reviews
+  questions ||--o{ question_reviews : "scheduled in"
+  users ||--o{ user_achievements : unlocks
+  users ||--o{ weekly_rewards : wins
+  weekly_settlements ||..o{ weekly_rewards : pays
+  daily_mazes ||..o{ runs : "seeds daily runs"
+  runs |o..o{ runs : "challenged by"
+
+  users {
+    int id PK
+    varchar username UK
+    varchar email UK
+    varchar password "password_hash"
+    varchar role "user, or admin for legacy rows"
+    int coins "cached ledger total"
+    int xp "lifetime, cached ledger total"
+    int level "derived from xp"
+    int streak
+    date last_checkin
+    mediumtext avatar "URL or data URL"
+    tinyint is_active
+    datetime last_login
+    int login_count
+    int total_games
+    int correct_answers
+    int wrong_answers
+    int powerups_used
+    varchar equipped_skin "items.code"
+    varchar equipped_theme "items.code"
+    datetime created_at
+  }
+  admin {
+    int admin_id PK
+    varchar fullname
+    varchar email UK
+    varchar username UK
+    varchar password "password_hash"
+  }
+  questions {
+    int id PK
+    varchar subject
+    enum difficulty "Easy, Medium, Hard"
+    varchar prompt
+    json options "2 to 4 strings"
+    tinyint answer_idx
+    varchar explanation
+    tinyint active "0 = archived"
+    datetime created_at
+    datetime updated_at "NULL = untouched seed"
+  }
+  runs {
+    int id PK
+    int user_id FK
+    enum mode "normal, daily, challenge"
+    date daily_date "UK with user_id"
+    int challenge_of "runs.id"
+    char share_code UK
+    varchar difficulty
+    varchar subject
+    int seed "maze layout"
+    tinyint gate_count
+    enum status "active, completed, abandoned"
+    datetime started_at
+    datetime deadline_at
+    datetime completed_at
+    int duration_seconds
+    int combo
+    int best_combo
+    tinyint doubler_pending
+    datetime freeze_until
+    tinyint pickup_count
+    int pickups_mask "one bit per pickup"
+    tinyint reviews_served
+    int coins_earned
+    int xp_earned
+  }
+  run_gates {
+    int run_id PK, FK
+    tinyint gate_no PK
+    int question_id "question being asked"
+    enum status "pending, cleared, skipped"
+    int attempts
+    datetime served_at "millisecond precision"
+    datetime cleared_at
+  }
+  run_answers {
+    int run_id PK, FK
+    tinyint gate_no PK
+    int attempt_no PK
+    int question_id "questions.id"
+    tinyint chosen_idx
+    tinyint correct
+    int coins_delta
+    int xp_delta
+    datetime created_at
+  }
+  ledger {
+    bigint id PK
+    int user_id FK "UK with reason and ref"
+    int coins_delta
+    int xp_delta
+    varchar reason
+    varchar ref
+    datetime created_at
+  }
+  items {
+    varchar code PK
+    varchar name
+    varchar description
+    varchar icon
+    enum kind "powerup, pack, skin, theme, perk"
+    int price
+    json grants "item code to quantity"
+    tinyint active
+    int sort_order
+  }
+  inventory {
+    int user_id PK, FK
+    varchar item_code PK "items.code"
+    int qty
+  }
+  question_reviews {
+    int user_id PK, FK
+    int question_id PK, FK
+    tinyint box "1 to 5"
+    datetime due_at
+    datetime updated_at
+  }
+  daily_mazes {
+    date day PK
+    int seed
+    datetime created_at
+  }
+  weekly_settlements {
+    date week_start PK
+    datetime settled_at
+  }
+  weekly_rewards {
+    date week_start PK
+    tinyint rank PK
+    int user_id FK
+    int xp
+    int coins
+  }
+  user_achievements {
+    int user_id PK, FK
+    varchar code PK "AchievementService code"
+    datetime unlocked_at
+  }
+  security_log {
+    bigint id PK
+    varchar event
+    varchar username
+    varchar ip
+    varchar detail
+    datetime created_at
+  }
+  schema_migrations {
+    varchar name PK
+    datetime applied_at
+  }

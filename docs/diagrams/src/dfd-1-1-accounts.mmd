@@ -1,0 +1,54 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 1, process 1.0: manage accounts and sessions.
+flowchart LR
+  G["Guest"]:::entity
+  P["Player"]:::entity
+  A["Administrator"]:::entity
+
+  P11("1.1<br/>Register<br/>account"):::process
+  P12("1.2<br/>Log in<br/>player"):::process
+  P13("1.3<br/>Log in<br/>admin"):::process
+  P14("1.4<br/>Edit profile<br/>and password"):::process
+  P15("1.5<br/>Log out"):::process
+  X3("3.0<br/>Award progression"):::external
+
+  D1[("D1 users")]:::store
+  D2[("D2 admin")]:::store
+  D6[("D6 inventory")]:::store
+  D11[("D11 security_log")]:::store
+  D12[("D12 PHP sessions")]:::store
+
+  G -- "username, email,<br/>password, confirm" --> P11
+  P11 -- "validated account<br/>(password hashed)" --> D1
+  P11 -- "100 starter coins" --> X3
+  P11 -- "3 of each power-up" --> D6
+
+  G -- "email, password" --> P12
+  D11 -- "recent failures<br/>from this IP" --> P12
+  D1 -- "account, hash,<br/>is_active" --> P12
+  P12 -- "login success or failure" --> D11
+  P12 -- "last_login, login_count" --> D1
+  P12 -- "player_id<br/>(new session id)" --> D12
+  P12 -- "session cookie" --> P
+
+  A -- "email, password" --> P13
+  D11 -- "recent failures" --> P13
+  D2 -- "admin record" --> P13
+  P13 -- "login events" --> D11
+  P13 -- "admin_id" --> D12
+
+  P -- "username, email, avatar,<br/>current and new password" --> P14
+  P14 <-- "profile, password hash" --> D1
+  P14 -- "updated profile" --> P
+
+  P -- "logout" --> P15
+  A -- "logout" --> P15
+  P15 -- "destroy session" --> D12
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

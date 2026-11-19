@@ -1,0 +1,73 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 1, process 2.0: play a maze run.
+flowchart LR
+  P["Player<br/>(browser)"]:::entity
+
+  P21("2.1<br/>Start run"):::process
+  P22("2.2<br/>Serve question"):::process
+  P23("2.3<br/>Grade answer"):::process
+  P24("2.4<br/>Apply power-up"):::process
+  P25("2.5<br/>Record pickup"):::process
+  P26("2.6<br/>Reset on timeout"):::process
+  P27("2.7<br/>Complete run"):::process
+  X3("3.0<br/>Award progression"):::external
+  X5("5.0<br/>Track learning"):::external
+  X6("6.0<br/>Competition and<br/>achievements"):::external
+
+  D3[("D3 questions")]:::store
+  D4[("D4 runs, run_gates,<br/>run_answers")]:::store
+  D6[("D6 inventory")]:::store
+  D7[("D7 question_reviews")]:::store
+  D8[("D8 daily_mazes")]:::store
+  D11[("D11 security_log")]:::store
+
+  P -- "mode, difficulty, subject<br/>or challenge code" --> P21
+  D8 -- "today's seed" --> P21
+  D3 -- "subjects" --> P21
+  P21 <-- "new run and gates,<br/>source or daily run" --> D4
+  P21 -- "seed, gate count,<br/>deadline, pickups" --> P
+
+  P -- "run, gate number" --> P22
+  D7 -- "due reviews" --> P22
+  D3 -- "question bank" --> P22
+  P22 <-- "gate question,<br/>served time" --> D4
+  P22 -- "question<br/>(no answer)" --> P
+
+  P -- "gate, attempt,<br/>chosen option" --> P23
+  D3 -- "answer, explanation" --> P23
+  P23 <-- "gate state, answer row,<br/>combo" --> D4
+  P23 -- "gate reward<br/>or penalty" --> X3
+  P23 -- "right or wrong" --> X5
+  P23 -- "check unlocks" --> X6
+  P23 -- "result, correct answer,<br/>explanation" --> P
+
+  P -- "power-up, gate" --> P24
+  P24 -- "use one" --> D6
+  P24 -- "deadline, skipped gate,<br/>doubler" --> D4
+  P24 -- "effect" --> P
+
+  P -- "pickup number" --> P25
+  P25 -- "pickups_mask bit" --> D4
+
+  P -- "timer ran out" --> P26
+  P26 <-- "deadline" --> D4
+  P26 -- "fresh deadline" --> P
+
+  P -- "reached exit" --> P27
+  P27 <-- "gates, answers,<br/>status, duration" --> D4
+  P27 -- "completion, pickups,<br/>daily bonus" --> X3
+  P27 -- "run outcome" --> X6
+  P27 -- "summary, share code,<br/>rank or result" --> P
+
+  P22 -- "rejections" --> D11
+  P23 -- "rejections" --> D11
+  P25 -- "rejections" --> D11
+  P27 -- "rejections" --> D11
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

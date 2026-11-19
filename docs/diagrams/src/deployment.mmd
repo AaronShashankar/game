@@ -1,0 +1,16 @@
+%% Deployment view: the Docker Compose setup used for development.
+flowchart LR
+  U["Browser"] -- "http://localhost:8080" --> W
+  DBA["DB admin"] -- "http://localhost:8082" --> PMA
+  GUI["SQL client"] -- "127.0.0.1:3307" --> DB
+
+  subgraph Host["Docker host (compose project: mazequest)"]
+    W["web<br/>php:8.3-apache<br/>DocumentRoot = public/<br/>runs migrations on start"]
+    PMA["phpmyadmin<br/>phpmyadmin:5.2"]
+    DB[("db<br/>mariadb:11<br/>volume: db-data")]
+    SRC[/"project folder<br/>(bind mount, live code)"/]
+  end
+
+  SRC -.-> W
+  W -- "3306 (maze / maze)" --> DB
+  PMA -- "3306" --> DB

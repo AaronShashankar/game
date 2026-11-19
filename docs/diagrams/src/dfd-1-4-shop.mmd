@@ -1,0 +1,37 @@
+---
+config:
+  layout: elk
+---
+%% DFD level 1, process 4.0: shop and inventory.
+flowchart LR
+  P["Player"]:::entity
+  X3("3.0<br/>Award progression"):::external
+  X2("2.0<br/>Play a maze run"):::external
+
+  P41("4.1<br/>List<br/>catalogue"):::process
+  P42("4.2<br/>Buy item"):::process
+  P43("4.3<br/>Equip<br/>cosmetic"):::process
+
+  D1[("D1 users")]:::store
+  D6[("D6 items, inventory")]:::store
+
+  D6 -- "items, owned quantities" --> P41
+  P41 -- "catalogue with<br/>owned counts" --> P
+
+  P -- "item code" --> P42
+  D6 -- "price, kind,<br/>owned count" --> P42
+  P42 -- "price from DB<br/>(never from request)" --> X3
+  P42 -- "granted items" --> D6
+  P42 -- "auto-equip skin or theme" --> D1
+  P42 -- "updated wallet" --> P
+
+  P -- "kind, code or none" --> P43
+  D6 -- "ownership" --> P43
+  P43 -- "equipped_skin,<br/>equipped_theme" --> D1
+
+  X2 -- "power-up used<br/>(qty - 1)" --> D6
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+  classDef external fill:#ffffff,stroke:#4f46e5,stroke-width:1.5px,stroke-dasharray:5 4,color:#1e1b4b
+  classDef store fill:#fff7ed,stroke:#c2410c,stroke-width:1.5px,color:#431407

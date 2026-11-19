@@ -1,0 +1,16 @@
+%% Context diagram: the whole of MazeQuest as one process, with the people who use it.
+flowchart LR
+  G["Guest<br/>(visitor, not signed in)"]:::entity
+  P["Player"]:::entity
+  A["Administrator"]:::entity
+  S(("0<br/>MazeQuest<br/>system")):::process
+
+  G -- "sign-up details,<br/>login credentials,<br/>challenge code" --> S
+  S -- "public pages,<br/>leaderboards,<br/>challenge details,<br/>session cookie" --> G
+  P -- "run requests,<br/>gate answers,<br/>power-ups, pickups,<br/>check-in, spin,<br/>purchases,<br/>profile changes" --> S
+  S -- "maze seed, run state,<br/>questions, feedback,<br/>rewards, summary,<br/>rankings, achievements,<br/>wallet" --> P
+  A -- "admin credentials,<br/>new players,<br/>question edits,<br/>CSV imports" --> S
+  S -- "statistics, analytics,<br/>player list,<br/>security log,<br/>question stats,<br/>data export" --> A
+
+  classDef entity fill:#f1f5f9,stroke:#334155,stroke-width:1.5px,color:#0f172a
+  classDef process fill:#eef2ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
