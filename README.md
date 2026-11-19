@@ -40,6 +40,21 @@ The **server** owns every reward. The browser draws the maze and sends what the 
 
 A request goes **Router → Controller → Service → Repository → DB**. Controllers only read input and return data. Rules live in services. SQL lives only in repositories.
 
+## Quick start (Docker, recommended)
+
+Needs only Docker Desktop. No PHP or MySQL on your machine.
+
+```bash
+docker compose up -d --build     # starts MariaDB + PHP/Apache, runs migrations
+docker compose exec web php database/create_admin.php admin@example.com admin 'choose-a-password'
+```
+
+- Game: http://localhost:8080 (register a player at `/register`)
+- Admin: http://localhost:8080/admin
+- Database (for a GUI client): `127.0.0.1:3307`, user `maze`, password `maze`, db `mazequest`
+
+Code is mounted live, so edits show up on refresh. Restarting the `web` container applies new migrations (`docker compose restart web`). `docker compose down` stops everything and keeps the data; `docker compose down -v` also wipes the database.
+
 ## Setup (XAMPP / LAMP)
 
 1. Put the project in your web root, e.g. `htdocs/game`, and make sure `mod_rewrite` is enabled and `AllowOverride All` is set.

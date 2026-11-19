@@ -1,0 +1,41 @@
+# Local development: `docker compose up -d`, then open http://localhost:8080
+name: mazequest
+
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: mazequest
+      MARIADB_USER: maze
+      MARIADB_PASSWORD: maze
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - "3307:3306"   # for a GUI client (TablePlus, DBeaver…): 127.0.0.1:3307, maze/maze
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      retries: 30
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: mazequest
+      DB_USER: maze
+      DB_PASS: maze
+      APP_DEBUG: "true"
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html   # live code: edits show up on refresh
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
