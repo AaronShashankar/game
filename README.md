@@ -2,6 +2,29 @@
 
 An educational maze game. Walk through a maze, answer a quiz question at each gate to open it, and reach the exit. Correct answers earn coins and XP. Players level up, keep daily streaks, buy power-ups, and compete on leaderboards.
 
+## Features
+
+- **Learning:**
+  - 145 questions across 5 subjects, each tagged Easy, Medium or Hard. Mazes prefer questions that match their difficulty.
+  - After a wrong answer the game shows the correct answer and a short explanation.
+  - Missed questions come back in later mazes on a spaced schedule (1, 3, 7, 14, 30 days).
+  - The profile shows how well the player knows each subject.
+- **Gameplay:**
+  - A shared **daily maze**, with its own leaderboard.
+  - Coins to find in dead ends.
+  - A run summary covering time, accuracy, best combo and the questions worth another look.
+  - Forest and Space themes and player skins, which can be equipped from the shop.
+  - An on-screen arrow pad on touch screens.
+  - Sound effects, with a mute button.
+- **Retention:**
+  - 13 achievements.
+  - **Challenge a friend** links: the friend plays the same maze with the same questions.
+  - Weekly prizes for the top 3 by XP.
+  - Streak freezes that cover a missed check-in.
+- **Admin:**
+  - Players, analytics and security log.
+  - A **question editor** with search, filters, per-question answer stats, archiving and CSV import.
+
 The **server** owns every reward. The browser draws the maze and sends what the player did (which gate, which answer, which power-up). The server checks it, scores it and records it in a ledger. A player cannot give themselves coins or XP from the browser console. See [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) for the design and the reasons behind it.
 
 ## Tech
@@ -33,8 +56,9 @@ The **server** owns every reward. The browser draws the maze and sends what the 
 ├── database/
 │   ├── migrate.php        # CLI: apply pending migrations
 │   ├── create_admin.php   # CLI: create an admin account
-│   ├── migrations/        # 001_core_schema, 002_migrate_legacy_data, 003_seed_…
+│   ├── migrations/        # 001_core_schema … 004_learning_and_engagement
 │   └── seeds/questions.json
+├── tests/                 # API test suite: run.php + lib/TestKit.php + *Test.php
 └── docs/                  # implementation report; legacy/ holds outdated docs
 ```
 
@@ -55,6 +79,21 @@ docker compose exec web php database/create_admin.php admin@example.com admin 'c
 - Database (for a GUI client): `127.0.0.1:3307`, user `maze`, password `maze`, db `mazequest`
 
 Code is mounted live, so edits show up on refresh. Restarting the `web` container applies new migrations (`docker compose restart web`). `docker compose down` stops everything and keeps the data; `docker compose down -v` also wipes the database.
+
+## Running the tests
+
+```bash
+docker compose exec -T web php tests/run.php                  # everything
+docker compose exec -T web php tests/run.php --filter=daily   # only tests whose name matches
+```
+
+The runner never touches your data:
+1. It drops and recreates a separate database, `mazequest_test`.
+2. It applies every migration to it.
+3. It starts PHP's built-in server on port 8099, pointed at that database.
+4. It runs the tests in `tests/*Test.php` over HTTP.
+
+Creating the database needs a MySQL account that may create databases. In Docker, `root`/`root` is used automatically. Elsewhere, set `TEST_DB_ADMIN_USER` and `TEST_DB_ADMIN_PASS`.
 
 ## Setup (XAMPP / LAMP)
 
@@ -84,11 +123,33 @@ Code is mounted live, so edits show up on refresh. Restarting the `web` containe
 |---|---|
 | `/` · `/leaderboard` · `/howtoplay` | everyone |
 | `/user` · `/register` | player login / sign-up |
-| `/dashboard` · `/choose-subject` · `/game` · `/shop` · `/profile` | logged-in players |
+| `/challenge?code=…` | everyone (landing page for a challenge link) |
+| `/dashboard` · `/choose-subject` · `/game` · `/shop` · `/profile` | logged-in players (`/game?daily=1` is today's maze) |
 | `/admin` → `/admin-panel` | admins (separate `admin` table and session key) |
 
 The JSON API is listed in the report.
 
 ## Changing the game
 
-Difficulty sizes, timers, gate counts, rewards, penalties, spin limits and power-up prices are all in **[src/Services/GameRules.php](src/Services/GameRules.php)**. The client reads difficulties from the server, so a change there applies everywhere. Questions are in the `questions` table (seeded from `database/seeds/questions.json`).
+Difficulty sizes, timers, gate counts, rewards, penalties, spin limits and power-up prices are all in **[src/Services/GameRules.php](src/Services/GameRules.php)**. The client reads difficulties from the server, so a change there applies everywhere. Achievements are listed in [src/Services/AchievementService.php](src/Services/AchievementService.php).
+
+### Questions
+
+You can add and edit questions in the admin panel under **Questions**. Questions are archived rather than deleted, because past answers refer to them. The starting set comes from `database/seeds/questions.json`.
+
+A migration updates a seeded question only if no admin has edited it, so edits made in the panel are never overwritten.
+
+**CSV import** (Questions → Import CSV) uses this header row:
+
+```csv
+subject,difficulty,prompt,option1,option2,option3,option4,answer,explanation
+Science,Easy,What gas do plants take in?,Oxygen,Carbon dioxide,Nitrogen,,2,Plants use CO2 for photosynthesis.
+```
+
+- `difficulty` is `Easy`, `Medium` or `Hard`.
+- `answer` is the number of the correct option, from 1 to 4.
+- Leave unused options empty. Each question needs at least 2 options.
+- `explanation` is optional.
+- Files can be up to 500 KB, with at most 1000 rows.
+- The import is all-or-nothing. If any row is invalid, nothing is saved and every row error is listed.
+- Rows that repeat an existing prompt in the same subject are skipped.

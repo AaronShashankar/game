@@ -1,6 +1,7 @@
 [
   {
     "subject": "Mathematics",
+    "difficulty": "Easy",
     "prompt": "What is 15 + 27?",
     "options": [
       "42",
@@ -8,219 +9,831 @@
       "52",
       "37"
     ],
-    "answer_idx": 0
+    "answer_idx": 0,
+    "explanation": "15 + 20 = 35, then 35 + 7 = 42."
   },
   {
     "subject": "Mathematics",
+    "difficulty": "Easy",
     "prompt": "What is the square root of 144?",
     "options": [
-      "12",
       "14",
-      "16",
-      "11"
+      "12",
+      "11",
+      "16"
     ],
-    "answer_idx": 0
+    "answer_idx": 1,
+    "explanation": "12 × 12 = 144, so √144 = 12."
   },
   {
     "subject": "Mathematics",
+    "difficulty": "Medium",
     "prompt": "Solve for x: 2x + 5 = 17",
     "options": [
-      "x = 6",
-      "x = 7",
       "x = 8",
-      "x = 9"
+      "x = 6",
+      "x = 9",
+      "x = 7"
     ],
-    "answer_idx": 0
+    "answer_idx": 1,
+    "explanation": "Subtract 5 from both sides (2x = 12), then divide by 2: x = 6."
   },
   {
     "subject": "Mathematics",
+    "difficulty": "Easy",
     "prompt": "What is 30% of 200?",
     "options": [
       "50",
-      "60",
       "70",
+      "60",
       "80"
     ],
-    "answer_idx": 1
+    "answer_idx": 2,
+    "explanation": "30% means 30 per 100, so 0.30 × 200 = 60."
   },
   {
     "subject": "Mathematics",
+    "difficulty": "Easy",
     "prompt": "What is the value of π (pi) to two decimal places?",
     "options": [
-      "3.14",
+      "3.18",
       "3.16",
-      "3.12",
-      "3.18"
+      "3.14",
+      "3.12"
     ],
-    "answer_idx": 0
+    "answer_idx": 2,
+    "explanation": "π = 3.14159…, which rounds to 3.14."
   },
   {
     "subject": "Mathematics",
+    "difficulty": "Easy",
     "prompt": "What is 8 × 7?",
     "options": [
+      "60",
       "56",
       "54",
-      "58",
-      "60"
+      "58"
     ],
-    "answer_idx": 0
+    "answer_idx": 1,
+    "explanation": "8 × 7 = 56 (think 8 × 5 = 40 plus 8 × 2 = 16)."
   },
   {
     "subject": "Mathematics",
+    "difficulty": "Easy",
     "prompt": "What is 144 ÷ 12?",
     "options": [
-      "12",
+      "16",
       "10",
-      "14",
-      "16"
+      "12",
+      "14"
     ],
-    "answer_idx": 0
+    "answer_idx": 2,
+    "explanation": "12 groups of 12 make 144, so 144 ÷ 12 = 12."
   },
   {
     "subject": "Mathematics",
+    "difficulty": "Medium",
     "prompt": "What is 5² + 3³?",
     "options": [
+      "40",
       "34",
-      "32",
-      "36",
-      "38"
+      "45",
+      "52"
     ],
-    "answer_idx": 0
+    "answer_idx": 3,
+    "explanation": "5² = 25 and 3³ = 27, and 25 + 27 = 52."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "What is 9 × 6?",
+    "options": [
+      "54",
+      "48",
+      "56",
+      "63"
+    ],
+    "answer_idx": 0,
+    "explanation": "9 × 6 = 54 (10 × 6 = 60, minus one 6)."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "What is 3/4 written as a percentage?",
+    "options": [
+      "75%",
+      "34%",
+      "43%",
+      "80%"
+    ],
+    "answer_idx": 0,
+    "explanation": "3 ÷ 4 = 0.75, and 0.75 × 100 = 75%."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "What do the interior angles of a triangle add up to?",
+    "options": [
+      "90°",
+      "270°",
+      "180°",
+      "360°"
+    ],
+    "answer_idx": 2,
+    "explanation": "The three interior angles of any flat triangle always sum to 180°."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "What is the next prime number after 7?",
+    "options": [
+      "10",
+      "9",
+      "11",
+      "8"
+    ],
+    "answer_idx": 2,
+    "explanation": "8 and 10 are divisible by 2 and 9 by 3; 11 has no divisors other than 1 and itself."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "What is 0.5 × 0.4?",
+    "options": [
+      "0.02",
+      "2.0",
+      "0.2",
+      "0.9"
+    ],
+    "answer_idx": 2,
+    "explanation": "5 × 4 = 20, and two decimal places in total give 0.20 = 0.2."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "What is the area of a rectangle 8 cm long and 5 cm wide?",
+    "options": [
+      "45 cm²",
+      "26 cm²",
+      "40 cm²",
+      "13 cm²"
+    ],
+    "answer_idx": 2,
+    "explanation": "Area = length × width = 8 × 5 = 40 cm². (26 cm is the perimeter.)"
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "What is the least common multiple of 4 and 6?",
+    "options": [
+      "12",
+      "2",
+      "24",
+      "10"
+    ],
+    "answer_idx": 0,
+    "explanation": "Multiples of 4: 4, 8, 12… Multiples of 6: 6, 12… The first shared one is 12."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "Simplify the fraction 18/24.",
+    "options": [
+      "3/4",
+      "9/12",
+      "2/3",
+      "6/8"
+    ],
+    "answer_idx": 0,
+    "explanation": "Divide the top and bottom by their greatest common factor, 6: 18/24 = 3/4."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "What is 2 to the power of 10?",
+    "options": [
+      "1000",
+      "512",
+      "1024",
+      "2048"
+    ],
+    "answer_idx": 2,
+    "explanation": "Doubling 2 ten times: 2, 4, 8, …, 512, 1024."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "A shirt costs 800 and is discounted by 25%. What is the sale price?",
+    "options": [
+      "640",
+      "775",
+      "200",
+      "600"
+    ],
+    "answer_idx": 3,
+    "explanation": "25% of 800 is 200, and 800 − 200 = 600."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "What is the perimeter of a square with sides of 9 cm?",
+    "options": [
+      "81 cm",
+      "18 cm",
+      "27 cm",
+      "36 cm"
+    ],
+    "answer_idx": 3,
+    "explanation": "A square has 4 equal sides: 4 × 9 = 36 cm. (81 cm² is its area.)"
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "Solve for x: 3x − 7 = 2x + 5",
+    "options": [
+      "x = −2",
+      "x = 2",
+      "x = 5",
+      "x = 12"
+    ],
+    "answer_idx": 3,
+    "explanation": "Subtract 2x from both sides (x − 7 = 5), then add 7: x = 12."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "What is the mean of 4, 8, 10 and 18?",
+    "options": [
+      "10",
+      "9",
+      "11",
+      "8"
+    ],
+    "answer_idx": 0,
+    "explanation": "Add them (4 + 8 + 10 + 18 = 40) and divide by how many there are (4): 40 ÷ 4 = 10."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "How many sides does a hexagon have?",
+    "options": [
+      "5",
+      "7",
+      "6",
+      "8"
+    ],
+    "answer_idx": 2,
+    "explanation": "\"Hex\" means six. A pentagon has 5 sides and an octagon 8."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Hard",
+    "prompt": "What is the area of a circle with radius 3? (Use π ≈ 3.14)",
+    "options": [
+      "37.68",
+      "9.42",
+      "18.84",
+      "28.26"
+    ],
+    "answer_idx": 3,
+    "explanation": "Area = πr² = 3.14 × 3² = 3.14 × 9 = 28.26. (18.84 is the circumference.)"
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Hard",
+    "prompt": "What is 5! (5 factorial)?",
+    "options": [
+      "15",
+      "60",
+      "25",
+      "120"
+    ],
+    "answer_idx": 3,
+    "explanation": "5! = 5 × 4 × 3 × 2 × 1 = 120."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Hard",
+    "prompt": "What is the larger solution of x² − 5x + 6 = 0?",
+    "options": [
+      "x = 5",
+      "x = 3",
+      "x = 6",
+      "x = 2"
+    ],
+    "answer_idx": 1,
+    "explanation": "Factor it: (x − 2)(x − 3) = 0, so x = 2 or x = 3. The larger is 3."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "What is 15% of 60?",
+    "options": [
+      "12",
+      "6",
+      "15",
+      "9"
+    ],
+    "answer_idx": 3,
+    "explanation": "10% of 60 is 6 and 5% is 3, so 15% is 6 + 3 = 9."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Hard",
+    "prompt": "A right triangle has legs of 6 and 8. How long is the hypotenuse?",
+    "options": [
+      "12",
+      "14",
+      "10",
+      "48"
+    ],
+    "answer_idx": 2,
+    "explanation": "Pythagoras: 6² + 8² = 36 + 64 = 100, and √100 = 10."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Medium",
+    "prompt": "What is the probability of rolling an even number on a fair six-sided die?",
+    "options": [
+      "1/6",
+      "2/3",
+      "1/3",
+      "1/2"
+    ],
+    "answer_idx": 3,
+    "explanation": "Three of the six faces (2, 4, 6) are even: 3/6 = 1/2."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "What is −8 + 3?",
+    "options": [
+      "11",
+      "5",
+      "−5",
+      "−11"
+    ],
+    "answer_idx": 2,
+    "explanation": "Start at −8 and move 3 steps up the number line to −5."
+  },
+  {
+    "subject": "Mathematics",
+    "difficulty": "Easy",
+    "prompt": "How many minutes are in 2.5 hours?",
+    "options": [
+      "125",
+      "130",
+      "150",
+      "250"
+    ],
+    "answer_idx": 2,
+    "explanation": "2 hours = 120 minutes and half an hour = 30 minutes: 120 + 30 = 150."
   },
   {
     "subject": "Science",
+    "difficulty": "Easy",
     "prompt": "What planet is known as the Red Planet?",
     "options": [
-      "Venus",
+      "Saturn",
       "Mars",
       "Jupiter",
-      "Saturn"
+      "Venus"
     ],
-    "answer_idx": 1
+    "answer_idx": 1,
+    "explanation": "Iron oxide (rust) in the dust and rocks on its surface gives Mars its red colour."
   },
   {
     "subject": "Science",
+    "difficulty": "Easy",
     "prompt": "What is H2O commonly known as?",
     "options": [
-      "Oxygen",
       "Water",
+      "Oxygen",
       "Carbon Dioxide",
       "Hydrogen Peroxide"
     ],
-    "answer_idx": 1
+    "answer_idx": 0,
+    "explanation": "Each water molecule is two hydrogen atoms bonded to one oxygen atom. (Hydrogen peroxide is H2O2.)"
   },
   {
     "subject": "Science",
+    "difficulty": "Medium",
     "prompt": "What is the chemical symbol for gold?",
     "options": [
-      "Go",
-      "Gd",
       "Au",
-      "Ag"
+      "Go",
+      "Ag",
+      "Gd"
     ],
-    "answer_idx": 2
+    "answer_idx": 0,
+    "explanation": "Au comes from aurum, the Latin word for gold. Ag is silver (argentum)."
   },
   {
     "subject": "Science",
+    "difficulty": "Easy",
     "prompt": "Which gas do plants absorb from the atmosphere?",
     "options": [
-      "Oxygen",
-      "Nitrogen",
       "Carbon Dioxide",
-      "Hydrogen"
+      "Hydrogen",
+      "Oxygen",
+      "Nitrogen"
     ],
-    "answer_idx": 2
+    "answer_idx": 0,
+    "explanation": "Plants take in carbon dioxide for photosynthesis and release oxygen."
   },
   {
     "subject": "Science",
+    "difficulty": "Easy",
     "prompt": "What is the hardest natural substance on Earth?",
     "options": [
       "Gold",
       "Iron",
-      "Diamond",
-      "Platinum"
+      "Platinum",
+      "Diamond"
     ],
-    "answer_idx": 2
+    "answer_idx": 3,
+    "explanation": "Diamond is carbon in a tightly bonded crystal lattice and tops the Mohs hardness scale at 10."
   },
   {
     "subject": "Science",
+    "difficulty": "Easy",
     "prompt": "What force pulls objects toward the Earth?",
     "options": [
-      "Magnetism",
-      "Gravity",
+      "Electricity",
       "Friction",
-      "Electricity"
+      "Magnetism",
+      "Gravity"
     ],
-    "answer_idx": 1
+    "answer_idx": 3,
+    "explanation": "Gravity is the attraction between masses; Earth's large mass pulls objects toward its centre."
   },
   {
     "subject": "Science",
-    "prompt": "How many bones are in the human body?",
+    "difficulty": "Medium",
+    "prompt": "How many bones are in the adult human body?",
     "options": [
-      "206",
-      "200",
       "210",
+      "200",
+      "206",
       "196"
     ],
-    "answer_idx": 0
+    "answer_idx": 2,
+    "explanation": "An adult skeleton has 206 bones. Babies are born with around 300, and some fuse as they grow."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "Which part of the cell is known as its powerhouse?",
+    "options": [
+      "Ribosome",
+      "Cell wall",
+      "Mitochondria",
+      "Nucleus"
+    ],
+    "answer_idx": 2,
+    "explanation": "Mitochondria release energy from food (cellular respiration) and store it as ATP."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "At what temperature does water boil at sea level?",
+    "options": [
+      "100 °C",
+      "90 °C",
+      "120 °C",
+      "80 °C"
+    ],
+    "answer_idx": 0,
+    "explanation": "At normal sea-level air pressure, pure water boils at 100 °C (212 °F)."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "Which is the largest planet in our solar system?",
+    "options": [
+      "Jupiter",
+      "Saturn",
+      "Earth",
+      "Neptune"
+    ],
+    "answer_idx": 0,
+    "explanation": "Jupiter is a gas giant more than 11 times wider than Earth."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "What is the centre of an atom called?",
+    "options": [
+      "Shell",
+      "Nucleus",
+      "Electron",
+      "Orbit"
+    ],
+    "answer_idx": 1,
+    "explanation": "The nucleus holds the protons and neutrons; electrons move around it."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "Which organ pumps blood around the body?",
+    "options": [
+      "Heart",
+      "Liver",
+      "Lungs",
+      "Kidneys"
+    ],
+    "answer_idx": 0,
+    "explanation": "The heart is a muscle that pumps blood through the arteries and veins."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "Roughly how fast does light travel in a vacuum?",
+    "options": [
+      "3,000 km/s",
+      "30,000 km/s",
+      "300,000 km/s",
+      "3,000,000 km/s"
+    ],
+    "answer_idx": 2,
+    "explanation": "Light travels at about 299,792 km per second, usually rounded to 300,000 km/s."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "What is the chemical symbol for sodium?",
+    "options": [
+      "So",
+      "Na",
+      "S",
+      "Sd"
+    ],
+    "answer_idx": 1,
+    "explanation": "Na comes from natrium, the Latin name for sodium. S is sulfur."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "What kind of energy does a moving object have?",
+    "options": [
+      "Potential energy",
+      "Kinetic energy",
+      "Nuclear energy",
+      "Chemical energy"
+    ],
+    "answer_idx": 1,
+    "explanation": "Kinetic energy is the energy of motion; the faster something moves, the more it has."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "Which part of a plant carries out most photosynthesis?",
+    "options": [
+      "Stem",
+      "Roots",
+      "Flowers",
+      "Leaves"
+    ],
+    "answer_idx": 3,
+    "explanation": "Leaves are full of chloroplasts, which capture sunlight to make sugar."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "What is the pH of pure water at 25 °C?",
+    "options": [
+      "14",
+      "5",
+      "7",
+      "0"
+    ],
+    "answer_idx": 2,
+    "explanation": "pH 7 is neutral. Below 7 is acidic; above 7 is alkaline (basic)."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "Which blood cells help the body fight infection?",
+    "options": [
+      "White blood cells",
+      "Plasma",
+      "Platelets",
+      "Red blood cells"
+    ],
+    "answer_idx": 0,
+    "explanation": "White blood cells find and destroy germs. Red cells carry oxygen; platelets help clotting."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "What is the SI unit of force?",
+    "options": [
+      "Pascal",
+      "Joule",
+      "Watt",
+      "Newton"
+    ],
+    "answer_idx": 3,
+    "explanation": "Force is measured in newtons (N). Joules measure energy and watts measure power."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "Which planet is closest to the Sun?",
+    "options": [
+      "Mars",
+      "Mercury",
+      "Earth",
+      "Venus"
+    ],
+    "answer_idx": 1,
+    "explanation": "Mercury orbits closest to the Sun, completing a year in about 88 Earth days."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "What are animals that eat only plants called?",
+    "options": [
+      "Herbivores",
+      "Carnivores",
+      "Omnivores",
+      "Decomposers"
+    ],
+    "answer_idx": 0,
+    "explanation": "Herbivores eat plants, carnivores eat meat and omnivores eat both."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "What is the most common gas in Earth's atmosphere?",
+    "options": [
+      "Carbon dioxide",
+      "Oxygen",
+      "Argon",
+      "Nitrogen"
+    ],
+    "answer_idx": 3,
+    "explanation": "Air is about 78% nitrogen and 21% oxygen."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "What is the chemical formula of table salt?",
+    "options": [
+      "NaOH",
+      "KCl",
+      "NaCl",
+      "CaCO3"
+    ],
+    "answer_idx": 2,
+    "explanation": "Table salt is sodium chloride: one sodium (Na) ion for each chloride (Cl) ion."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Medium",
+    "prompt": "Which scientist developed the theory of general relativity?",
+    "options": [
+      "Isaac Newton",
+      "Galileo Galilei",
+      "Niels Bohr",
+      "Albert Einstein"
+    ],
+    "answer_idx": 3,
+    "explanation": "Einstein published general relativity in 1915, describing gravity as the curving of space-time."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Easy",
+    "prompt": "What is it called when a liquid slowly turns into a gas at its surface?",
+    "options": [
+      "Freezing",
+      "Condensation",
+      "Melting",
+      "Evaporation"
+    ],
+    "answer_idx": 3,
+    "explanation": "Evaporation turns liquid into vapour. Condensation is the reverse: gas turning back into liquid."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Hard",
+    "prompt": "How many chromosomes are in a typical human body cell?",
+    "options": [
+      "46",
+      "23",
+      "48",
+      "44"
+    ],
+    "answer_idx": 0,
+    "explanation": "Body cells have 23 pairs, 46 in total. Egg and sperm cells carry 23."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Hard",
+    "prompt": "What is the atomic number of carbon?",
+    "options": [
+      "8",
+      "6",
+      "14",
+      "12"
+    ],
+    "answer_idx": 1,
+    "explanation": "The atomic number counts protons; carbon has 6. (12 is the mass number of carbon-12.)"
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Hard",
+    "prompt": "Which law says every action has an equal and opposite reaction?",
+    "options": [
+      "Newton's third law",
+      "Newton's first law",
+      "The law of conservation of energy",
+      "Newton's second law"
+    ],
+    "answer_idx": 0,
+    "explanation": "Newton's third law: when one object pushes on another, the second pushes back with equal force."
+  },
+  {
+    "subject": "Science",
+    "difficulty": "Hard",
+    "prompt": "Which organ produces insulin?",
+    "options": [
+      "Liver",
+      "Pancreas",
+      "Stomach",
+      "Kidney"
+    ],
+    "answer_idx": 1,
+    "explanation": "Beta cells in the pancreas make insulin, which lets cells take in sugar from the blood."
   },
   {
     "subject": "General Knowledge",
+    "difficulty": "Easy",
     "prompt": "नेपालको राजधानी कहाँ हो?",
     "options": [
-      "पोखरा",
+      "भरतपुर",
       "ललितपुर",
       "काठमाडौं",
-      "भरतपुर"
+      "पोखरा"
     ],
-    "answer_idx": 2
+    "answer_idx": 2,
+    "explanation": "काठमाडौं नेपालको राजधानी र सबैभन्दा ठूलो सहर हो। (Kathmandu is the capital and largest city of Nepal.)"
   },
   {
     "subject": "General Knowledge",
+    "difficulty": "Easy",
     "prompt": "What is the capital of France?",
     "options": [
-      "London",
+      "Madrid",
       "Berlin",
       "Paris",
-      "Madrid"
+      "London"
     ],
-    "answer_idx": 2
+    "answer_idx": 2,
+    "explanation": "Paris has been France's capital for most of its history. London, Berlin and Madrid are the capitals of the UK, Germany and Spain."
   },
   {
     "subject": "General Knowledge",
+    "difficulty": "Easy",
     "prompt": "Which country is known as the Land of the Rising Sun?",
     "options": [
-      "China",
       "Thailand",
+      "China",
       "Japan",
       "South Korea"
     ],
-    "answer_idx": 2
+    "answer_idx": 2,
+    "explanation": "Japan's own name, Nihon or Nippon, means \"origin of the sun\"."
   },
   {
     "subject": "General Knowledge",
+    "difficulty": "Easy",
     "prompt": "Who painted the Mona Lisa?",
     "options": [
       "Vincent van Gogh",
+      "Michelangelo",
       "Pablo Picasso",
-      "Leonardo da Vinci",
-      "Michelangelo"
+      "Leonardo da Vinci"
     ],
-    "answer_idx": 2
+    "answer_idx": 3,
+    "explanation": "Leonardo painted it in the early 1500s. It hangs in the Louvre in Paris."
   },
   {
     "subject": "General Knowledge",
+    "difficulty": "Easy",
     "prompt": "What is the largest ocean on Earth?",
     "options": [
-      "Atlantic Ocean",
+      "Pacific Ocean",
       "Indian Ocean",
-      "Arctic Ocean",
-      "Pacific Ocean"
+      "Atlantic Ocean",
+      "Arctic Ocean"
     ],
-    "answer_idx": 3
+    "answer_idx": 0,
+    "explanation": "The Pacific covers about a third of Earth's surface, more than all the land combined."
   },
   {
     "subject": "General Knowledge",
+    "difficulty": "Easy",
     "prompt": "Which is the tallest mountain in the world?",
     "options": [
       "K2",
@@ -228,149 +841,1047 @@
       "Kangchenjunga",
       "Makalu"
     ],
-    "answer_idx": 1
+    "answer_idx": 1,
+    "explanation": "Everest stands 8,849 m above sea level on the Nepal–China border. K2 (8,611 m) is second."
   },
   {
     "subject": "General Knowledge",
+    "difficulty": "Easy",
     "prompt": "How many continents are there?",
     "options": [
+      "7",
       "5",
       "6",
-      "7",
       "8"
     ],
-    "answer_idx": 2
+    "answer_idx": 0,
+    "explanation": "The most widely taught model has seven: Africa, Antarctica, Asia, Australia, Europe, North America and South America."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "What is the capital of Australia?",
+    "options": [
+      "Melbourne",
+      "Perth",
+      "Sydney",
+      "Canberra"
+    ],
+    "answer_idx": 3,
+    "explanation": "Canberra was purpose-built as the capital, partly as a compromise between Sydney and Melbourne."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "Which is the longest river in Africa?",
+    "options": [
+      "Niger",
+      "Zambezi",
+      "Nile",
+      "Congo"
+    ],
+    "answer_idx": 2,
+    "explanation": "The Nile flows about 6,650 km north to the Mediterranean Sea."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "How many players does a football (soccer) team have on the field?",
+    "options": [
+      "11",
+      "10",
+      "9",
+      "12"
+    ],
+    "answer_idx": 0,
+    "explanation": "Each side fields 11 players, including the goalkeeper."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "What is the currency of Japan?",
+    "options": [
+      "Ringgit",
+      "Yuan",
+      "Won",
+      "Yen"
+    ],
+    "answer_idx": 3,
+    "explanation": "Japan uses the yen. The won is South Korea's currency and the yuan is China's."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "Which is the largest country by area?",
+    "options": [
+      "China",
+      "Russia",
+      "Canada",
+      "United States"
+    ],
+    "answer_idx": 1,
+    "explanation": "Russia covers about 17 million km², spanning 11 time zones."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "What is the national flower of Nepal?",
+    "options": [
+      "Marigold",
+      "Rose",
+      "Rhododendron (लाली गुराँस)",
+      "Lotus"
+    ],
+    "answer_idx": 2,
+    "explanation": "The red rhododendron (लाली गुराँस) blooms across Nepal's hills in spring."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "Which planet is famous for its bright rings?",
+    "options": [
+      "Mercury",
+      "Saturn",
+      "Venus",
+      "Mars"
+    ],
+    "answer_idx": 1,
+    "explanation": "Saturn's rings are made of countless pieces of ice and rock."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "Who wrote \"Romeo and Juliet\"?",
+    "options": [
+      "Mark Twain",
+      "Charles Dickens",
+      "Jane Austen",
+      "William Shakespeare"
+    ],
+    "answer_idx": 3,
+    "explanation": "Shakespeare wrote the tragedy in the 1590s."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "What is the smallest country in the world by area?",
+    "options": [
+      "Vatican City",
+      "Monaco",
+      "Maldives",
+      "San Marino"
+    ],
+    "answer_idx": 0,
+    "explanation": "Vatican City, inside Rome, covers about 0.44 km²."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "How many days are in a leap year?",
+    "options": [
+      "365",
+      "364",
+      "366",
+      "367"
+    ],
+    "answer_idx": 2,
+    "explanation": "A leap year adds 29 February, making 366 days, to keep the calendar in step with Earth's orbit."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "What is the largest hot desert in the world?",
+    "options": [
+      "Gobi",
+      "Sahara",
+      "Thar",
+      "Kalahari"
+    ],
+    "answer_idx": 1,
+    "explanation": "The Sahara covers most of North Africa. (Antarctica is the largest desert overall, but it is cold.)"
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "What is the capital of Canada?",
+    "options": [
+      "Toronto",
+      "Montreal",
+      "Ottawa",
+      "Vancouver"
+    ],
+    "answer_idx": 2,
+    "explanation": "Ottawa, in Ontario, is the capital. Toronto is Canada's largest city."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "In which country is Lumbini, the birthplace of Gautama Buddha?",
+    "options": [
+      "India",
+      "Nepal",
+      "Bhutan",
+      "Sri Lanka"
+    ],
+    "answer_idx": 1,
+    "explanation": "Lumbini is in southern Nepal and is a UNESCO World Heritage Site."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "Which language has the most native speakers?",
+    "options": [
+      "Spanish",
+      "Hindi",
+      "Mandarin Chinese",
+      "English"
+    ],
+    "answer_idx": 2,
+    "explanation": "Mandarin has the most native speakers. English has the most speakers overall when second-language speakers are counted."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Easy",
+    "prompt": "How many colours are traditionally listed in a rainbow?",
+    "options": [
+      "6",
+      "7",
+      "5",
+      "8"
+    ],
+    "answer_idx": 1,
+    "explanation": "Red, orange, yellow, green, blue, indigo and violet: seven colours."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "Which United Nations agency leads on global public health?",
+    "options": [
+      "UNICEF",
+      "UNESCO",
+      "World Health Organization (WHO)",
+      "World Trade Organization (WTO)"
+    ],
+    "answer_idx": 2,
+    "explanation": "The WHO, based in Geneva, coordinates international public health."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Hard",
+    "prompt": "What is the capital of Brazil?",
+    "options": [
+      "São Paulo",
+      "Salvador",
+      "Rio de Janeiro",
+      "Brasília"
+    ],
+    "answer_idx": 3,
+    "explanation": "Brasília was built as the new capital in 1960, replacing Rio de Janeiro."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "Which instrument usually has 88 keys?",
+    "options": [
+      "Piano",
+      "Violin",
+      "Guitar",
+      "Flute"
+    ],
+    "answer_idx": 0,
+    "explanation": "A standard piano has 52 white keys and 36 black keys: 88 in total."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "Which country gave the Statue of Liberty to the United States?",
+    "options": [
+      "Italy",
+      "Spain",
+      "United Kingdom",
+      "France"
+    ],
+    "answer_idx": 3,
+    "explanation": "France gave it as a gift of friendship; it was dedicated in New York in 1886."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Hard",
+    "prompt": "What is the deepest known point in Earth's oceans?",
+    "options": [
+      "Challenger Deep (Mariana Trench)",
+      "Java Trench",
+      "Puerto Rico Trench",
+      "Tonga Trench"
+    ],
+    "answer_idx": 0,
+    "explanation": "The Challenger Deep in the Mariana Trench is nearly 11,000 m below sea level."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Hard",
+    "prompt": "Which two countries jointly announced Mount Everest's height of 8,849 m in 2020?",
+    "options": [
+      "Nepal and India",
+      "Nepal and China",
+      "Nepal and Bhutan",
+      "India and China"
+    ],
+    "answer_idx": 1,
+    "explanation": "Nepal and China announced the jointly measured height in December 2020."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Medium",
+    "prompt": "What is the main language spoken in Brazil?",
+    "options": [
+      "Portuguese",
+      "English",
+      "Spanish",
+      "French"
+    ],
+    "answer_idx": 0,
+    "explanation": "Brazil was a Portuguese colony, so Portuguese is its official language."
+  },
+  {
+    "subject": "General Knowledge",
+    "difficulty": "Hard",
+    "prompt": "Which city hosted the first modern Olympic Games in 1896?",
+    "options": [
+      "Athens",
+      "Rome",
+      "Paris",
+      "London"
+    ],
+    "answer_idx": 0,
+    "explanation": "The modern Olympics began in Athens, honouring the ancient Games of Greece."
   },
   {
     "subject": "History",
+    "difficulty": "Easy",
     "prompt": "Who was the first President of the United States?",
     "options": [
-      "Thomas Jefferson",
       "George Washington",
-      "Abraham Lincoln",
-      "John Adams"
+      "John Adams",
+      "Thomas Jefferson",
+      "Abraham Lincoln"
     ],
-    "answer_idx": 1
+    "answer_idx": 0,
+    "explanation": "George Washington served as the first president from 1789 to 1797."
   },
   {
     "subject": "History",
+    "difficulty": "Easy",
     "prompt": "In which year did World War II end?",
     "options": [
-      "1945",
-      "1939",
       "1950",
-      "1941"
+      "1945",
+      "1941",
+      "1939"
     ],
-    "answer_idx": 0
+    "answer_idx": 1,
+    "explanation": "Germany surrendered in May 1945 and Japan in September 1945."
   },
   {
     "subject": "History",
-    "prompt": "Who discovered America?",
+    "difficulty": "Medium",
+    "prompt": "Whose 1492 voyage for Spain began lasting European contact with the Americas?",
     "options": [
-      "Christopher Columbus",
-      "Vasco da Gama",
       "Ferdinand Magellan",
-      "James Cook"
+      "Christopher Columbus",
+      "James Cook",
+      "Vasco da Gama"
     ],
-    "answer_idx": 0
+    "answer_idx": 1,
+    "explanation": "Columbus reached the Bahamas in October 1492. Indigenous peoples had lived in the Americas for thousands of years, and Norse sailors had reached North America around 1000 CE."
   },
   {
     "subject": "History",
-    "prompt": "Which ancient civilization built the pyramids?",
+    "difficulty": "Easy",
+    "prompt": "Which ancient civilisation built the pyramids of Giza?",
     "options": [
-      "Romans",
-      "Greeks",
       "Egyptians",
-      "Mayans"
+      "Mayans",
+      "Greeks",
+      "Romans"
     ],
-    "answer_idx": 2
+    "answer_idx": 0,
+    "explanation": "The Great Pyramid was built around 2560 BCE as a tomb for the pharaoh Khufu."
   },
   {
     "subject": "History",
+    "difficulty": "Easy",
     "prompt": "When did the Titanic sink?",
     "options": [
       "1912",
+      "1898",
       "1905",
-      "1920",
-      "1898"
+      "1920"
     ],
-    "answer_idx": 0
+    "answer_idx": 0,
+    "explanation": "The Titanic hit an iceberg and sank on 15 April 1912, on its first voyage."
   },
   {
     "subject": "History",
-    "prompt": "Who was the first man on the moon?",
+    "difficulty": "Easy",
+    "prompt": "Who was the first person to walk on the Moon?",
     "options": [
+      "Neil Armstrong",
       "Buzz Aldrin",
+      "John Glenn",
+      "Yuri Gagarin"
+    ],
+    "answer_idx": 0,
+    "explanation": "Neil Armstrong stepped onto the Moon on 20 July 1969 during Apollo 11; Buzz Aldrin followed him."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "Who was the first person to travel into space?",
+    "options": [
+      "Alan Shepard",
       "Neil Armstrong",
       "Yuri Gagarin",
-      "John Glenn"
+      "Valentina Tereshkova"
     ],
-    "answer_idx": 1
+    "answer_idx": 2,
+    "explanation": "Soviet cosmonaut Yuri Gagarin orbited Earth in Vostok 1 on 12 April 1961."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Easy",
+    "prompt": "Which wall fell in 1989, a symbol of the end of the Cold War?",
+    "options": [
+      "Great Wall of China",
+      "Berlin Wall",
+      "Hadrian's Wall",
+      "Western Wall"
+    ],
+    "answer_idx": 1,
+    "explanation": "The Berlin Wall divided East and West Berlin from 1961 until it was opened in November 1989."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Easy",
+    "prompt": "Who led India's non-violent independence movement?",
+    "options": [
+      "Mahatma Gandhi",
+      "B. R. Ambedkar",
+      "Jawaharlal Nehru",
+      "Subhas Chandra Bose"
+    ],
+    "answer_idx": 0,
+    "explanation": "Gandhi led campaigns of non-violent resistance against British rule; India became independent in 1947."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "In which year did World War I begin?",
+    "options": [
+      "1918",
+      "1914",
+      "1905",
+      "1939"
+    ],
+    "answer_idx": 1,
+    "explanation": "The war began in 1914, after the assassination of Archduke Franz Ferdinand, and ended in 1918."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "Who unified the kingdom of Nepal in the 18th century?",
+    "options": [
+      "Tribhuvan Shah",
+      "Jung Bahadur Rana",
+      "Prithvi Narayan Shah",
+      "Bhimsen Thapa"
+    ],
+    "answer_idx": 2,
+    "explanation": "Prithvi Narayan Shah, King of Gorkha, began the unification in 1743 and took the Kathmandu valley in 1768–69."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "Which Roman city was buried by the eruption of Mount Vesuvius in 79 CE?",
+    "options": [
+      "Troy",
+      "Pompeii",
+      "Carthage",
+      "Athens"
+    ],
+    "answer_idx": 1,
+    "explanation": "Ash from Vesuvius buried Pompeii, preserving the city until it was excavated centuries later."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "Who was the first woman to win a Nobel Prize?",
+    "options": [
+      "Rosalind Franklin",
+      "Florence Nightingale",
+      "Ada Lovelace",
+      "Marie Curie"
+    ],
+    "answer_idx": 3,
+    "explanation": "Marie Curie shared the 1903 Nobel Prize in Physics and won the 1911 Prize in Chemistry."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Hard",
+    "prompt": "Which charter, sealed in 1215, limited the power of the English king?",
+    "options": [
+      "Domesday Book",
+      "Treaty of Versailles",
+      "Magna Carta",
+      "Bill of Rights"
+    ],
+    "answer_idx": 2,
+    "explanation": "King John agreed to Magna Carta in 1215. It established that the king was also subject to the law."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Easy",
+    "prompt": "Who was the British prime minister for most of World War II?",
+    "options": [
+      "Winston Churchill",
+      "Neville Chamberlain",
+      "Clement Attlee",
+      "Margaret Thatcher"
+    ],
+    "answer_idx": 0,
+    "explanation": "Churchill became prime minister in May 1940 and led Britain until July 1945."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "In which year did the French Revolution begin?",
+    "options": [
+      "1848",
+      "1789",
+      "1776",
+      "1815"
+    ],
+    "answer_idx": 1,
+    "explanation": "It began in 1789; the storming of the Bastille on 14 July is celebrated as France's national day."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "Which civilisation built Machu Picchu?",
+    "options": [
+      "Inca",
+      "Olmec",
+      "Aztec",
+      "Maya"
+    ],
+    "answer_idx": 0,
+    "explanation": "The Inca built Machu Picchu high in the Andes of Peru in the 15th century."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "Who introduced printing with movable metal type to Europe around 1440?",
+    "options": [
+      "Johannes Gutenberg",
+      "Martin Luther",
+      "Leonardo da Vinci",
+      "Galileo Galilei"
+    ],
+    "answer_idx": 0,
+    "explanation": "Gutenberg's press in Mainz made books far cheaper and spread ideas across Europe."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Hard",
+    "prompt": "In which year was Nepal declared a federal democratic republic?",
+    "options": [
+      "2006",
+      "2015",
+      "2008",
+      "1990"
+    ],
+    "answer_idx": 2,
+    "explanation": "The Constituent Assembly abolished the monarchy and declared a republic on 28 May 2008."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Hard",
+    "prompt": "Which country was first to give all women the vote in national elections, in 1893?",
+    "options": [
+      "United Kingdom",
+      "United States",
+      "New Zealand",
+      "Finland"
+    ],
+    "answer_idx": 2,
+    "explanation": "New Zealand granted women the vote in 1893 after a campaign led by Kate Sheppard."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Hard",
+    "prompt": "Who was the first emperor of a unified China?",
+    "options": [
+      "Qin Shi Huang",
+      "Sun Yat-sen",
+      "Confucius",
+      "Kublai Khan"
+    ],
+    "answer_idx": 0,
+    "explanation": "Qin Shi Huang unified China in 221 BCE. He is also known for the Terracotta Army."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Easy",
+    "prompt": "Who reached the summit of Everest with Edmund Hillary in 1953?",
+    "options": [
+      "George Mallory",
+      "Reinhold Messner",
+      "Junko Tabei",
+      "Tenzing Norgay"
+    ],
+    "answer_idx": 3,
+    "explanation": "Tenzing Norgay and Edmund Hillary made the first confirmed ascent on 29 May 1953."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Easy",
+    "prompt": "Which war was fought between the northern and southern United States from 1861 to 1865?",
+    "options": [
+      "The Revolutionary War",
+      "The American Civil War",
+      "The Korean War",
+      "The War of 1812"
+    ],
+    "answer_idx": 1,
+    "explanation": "The Union (North) defeated the Confederacy (South), and slavery was abolished."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "In which country did the Renaissance begin?",
+    "options": [
+      "Germany",
+      "Italy",
+      "France",
+      "England"
+    ],
+    "answer_idx": 1,
+    "explanation": "The Renaissance began in Italian city-states such as Florence in the 14th century."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Easy",
+    "prompt": "Who gave the \"I Have a Dream\" speech in 1963?",
+    "options": [
+      "Malcolm X",
+      "Barack Obama",
+      "Nelson Mandela",
+      "Martin Luther King Jr."
+    ],
+    "answer_idx": 3,
+    "explanation": "Martin Luther King Jr. gave it at the March on Washington on 28 August 1963."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Hard",
+    "prompt": "Which ship carried the Pilgrims to North America in 1620?",
+    "options": [
+      "Beagle",
+      "Mayflower",
+      "Endeavour",
+      "Santa María"
+    ],
+    "answer_idx": 1,
+    "explanation": "The Mayflower landed in what is now Massachusetts in November 1620."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Medium",
+    "prompt": "Who was the first Prime Minister of independent India?",
+    "options": [
+      "Mahatma Gandhi",
+      "Jawaharlal Nehru",
+      "Sardar Patel",
+      "Indira Gandhi"
+    ],
+    "answer_idx": 1,
+    "explanation": "Nehru served as prime minister from independence in 1947 until 1964."
+  },
+  {
+    "subject": "History",
+    "difficulty": "Easy",
+    "prompt": "In which country did the ancient Olympic Games begin?",
+    "options": [
+      "Egypt",
+      "Italy",
+      "Greece",
+      "Turkey"
+    ],
+    "answer_idx": 2,
+    "explanation": "The ancient Games were held at Olympia in Greece, traditionally from 776 BCE."
   },
   {
     "subject": "English Vocabulary",
+    "difficulty": "Easy",
     "prompt": "What is a synonym for 'happy'?",
     "options": [
-      "Sad",
+      "Tired",
       "Joyful",
       "Angry",
-      "Tired"
-    ],
-    "answer_idx": 1
-  },
-  {
-    "subject": "English Vocabulary",
-    "prompt": "What does 'benevolent' mean?",
-    "options": [
-      "Kind",
-      "Evil",
-      "Neutral",
-      "Strange"
-    ],
-    "answer_idx": 0
-  },
-  {
-    "subject": "English Vocabulary",
-    "prompt": "What is the opposite of 'ancient'?",
-    "options": [
-      "Old",
-      "Modern",
-      "Historic",
-      "Classic"
-    ],
-    "answer_idx": 1
-  },
-  {
-    "subject": "English Vocabulary",
-    "prompt": "What does 'ambiguous' mean?",
-    "options": [
-      "Clear",
-      "Unclear",
-      "Happy",
       "Sad"
     ],
-    "answer_idx": 1
+    "answer_idx": 1,
+    "explanation": "A synonym has the same meaning. \"Joyful\" means full of happiness."
   },
   {
     "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "What does 'benevolent' mean?",
+    "options": [
+      "Evil",
+      "Neutral",
+      "Kind",
+      "Strange"
+    ],
+    "answer_idx": 2,
+    "explanation": "From Latin bene (well) + volens (wishing): well-meaning and kind."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What is the opposite of 'ancient'?",
+    "options": [
+      "Classic",
+      "Historic",
+      "Modern",
+      "Old"
+    ],
+    "answer_idx": 2,
+    "explanation": "\"Ancient\" means very old; its opposite is \"modern\", meaning recent or current."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "What does 'ambiguous' mean?",
+    "options": [
+      "Sad",
+      "Happy",
+      "Unclear",
+      "Clear"
+    ],
+    "answer_idx": 2,
+    "explanation": "Something ambiguous can be understood in more than one way, so its meaning is unclear."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
     "prompt": "What is a synonym for 'beautiful'?",
     "options": [
-      "Ugly",
+      "Ordinary",
       "Pretty",
-      "Plain",
-      "Ordinary"
+      "Ugly",
+      "Plain"
     ],
-    "answer_idx": 1
+    "answer_idx": 1,
+    "explanation": "\"Pretty\" and \"beautiful\" both describe something pleasing to look at."
   },
   {
     "subject": "English Vocabulary",
+    "difficulty": "Medium",
     "prompt": "What is the meaning of 'diligent'?",
     "options": [
-      "Lazy",
-      "Hard-working",
+      "Funny",
       "Smart",
-      "Funny"
+      "Hard-working",
+      "Lazy"
     ],
-    "answer_idx": 1
+    "answer_idx": 2,
+    "explanation": "A diligent person works with steady care and effort."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What is the plural of 'child'?",
+    "options": [
+      "Childs",
+      "Childrens",
+      "Childes",
+      "Children"
+    ],
+    "answer_idx": 3,
+    "explanation": "\"Child\" has an irregular plural: \"children\"."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "Which of these words is a noun?",
+    "options": [
+      "Run",
+      "Blue",
+      "Quickly",
+      "Happiness"
+    ],
+    "answer_idx": 3,
+    "explanation": "A noun names a person, place, thing or idea; \"happiness\" is an idea. \"Quickly\" is an adverb, \"run\" a verb and \"blue\" an adjective."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What is the past tense of 'go'?",
+    "options": [
+      "Going",
+      "Gone",
+      "Goed",
+      "Went"
+    ],
+    "answer_idx": 3,
+    "explanation": "\"Go\" is irregular: go → went → gone. \"Gone\" needs a helper, as in \"has gone\"."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What does 'enormous' mean?",
+    "options": [
+      "Very small",
+      "Very fast",
+      "Very old",
+      "Very large"
+    ],
+    "answer_idx": 3,
+    "explanation": "\"Enormous\" means extremely large, like \"huge\" or \"gigantic\"."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What is an antonym of 'generous'?",
+    "options": [
+      "Stingy",
+      "Giving",
+      "Charitable",
+      "Kind"
+    ],
+    "answer_idx": 0,
+    "explanation": "An antonym has the opposite meaning. A stingy person is unwilling to give or spend."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "What does 'meticulous' mean?",
+    "options": [
+      "Careless",
+      "Very quick",
+      "Very careful and precise",
+      "Easily angered"
+    ],
+    "answer_idx": 2,
+    "explanation": "A meticulous person pays close attention to every detail."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "Which word is spelled correctly?",
+    "options": [
+      "Necessary",
+      "Necesary",
+      "Neccesary",
+      "Neccessary"
+    ],
+    "answer_idx": 0,
+    "explanation": "Remember \"one collar, two sleeves\": one c, two s's: n-e-c-e-s-s-a-r-y."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "What does 'procrastinate' mean?",
+    "options": [
+      "To plan carefully",
+      "To put off doing something",
+      "To argue",
+      "To work very fast"
+    ],
+    "answer_idx": 1,
+    "explanation": "From Latin pro (forward) + crastinus (of tomorrow): pushing a task to later."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Hard",
+    "prompt": "Which word means 'to make something less severe'?",
+    "options": [
+      "Mitigate",
+      "Exacerbate",
+      "Intensify",
+      "Aggravate"
+    ],
+    "answer_idx": 0,
+    "explanation": "\"Mitigate\" means to lessen. \"Aggravate\" and \"exacerbate\" mean to make worse."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What is a synonym for 'brave'?",
+    "options": [
+      "Courageous",
+      "Timid",
+      "Nervous",
+      "Fearful"
+    ],
+    "answer_idx": 0,
+    "explanation": "\"Courageous\" means willing to face danger or difficulty, the same as brave."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Hard",
+    "prompt": "What does 'ubiquitous' mean?",
+    "options": [
+      "Hard to understand",
+      "Found everywhere",
+      "Extremely loud",
+      "Very rare"
+    ],
+    "answer_idx": 1,
+    "explanation": "Something ubiquitous seems to be everywhere at once, like mobile phones today."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "Which sentence is correct?",
+    "options": [
+      "Their house is bigger than ours.",
+      "They're house is bigger than ours.",
+      "Their house is more bigger than ours.",
+      "There house is bigger than ours."
+    ],
+    "answer_idx": 0,
+    "explanation": "\"Their\" shows ownership. \"There\" is a place, \"they're\" means \"they are\", and \"more bigger\" doubles the comparison."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Hard",
+    "prompt": "What does 'ephemeral' mean?",
+    "options": [
+      "Lasting forever",
+      "Easy to see",
+      "Very heavy",
+      "Lasting a very short time"
+    ],
+    "answer_idx": 3,
+    "explanation": "From Greek ephēmeros, \"lasting a day\": something that quickly passes."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What is the comparative form of 'good'?",
+    "options": [
+      "More good",
+      "Better",
+      "Best",
+      "Gooder"
+    ],
+    "answer_idx": 1,
+    "explanation": "\"Good\" is irregular: good → better → best."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "What does 'candid' mean?",
+    "options": [
+      "Honest and direct",
+      "Secretive",
+      "Shy",
+      "Sweet-tasting"
+    ],
+    "answer_idx": 0,
+    "explanation": "A candid answer is frank and truthful, even when it is uncomfortable."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "Which of these words is an adjective?",
+    "options": [
+      "Brightly",
+      "Bright",
+      "Brightness",
+      "Brighten"
+    ],
+    "answer_idx": 1,
+    "explanation": "An adjective describes a noun (\"a bright light\"). \"Brightly\" is an adverb, \"brighten\" a verb and \"brightness\" a noun."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "What does 'eloquent' mean?",
+    "options": [
+      "Fluent and persuasive with words",
+      "Quiet and shy",
+      "Rude",
+      "Confused"
+    ],
+    "answer_idx": 0,
+    "explanation": "An eloquent speaker or writer expresses ideas clearly and movingly."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Medium",
+    "prompt": "What is an antonym of 'scarce'?",
+    "options": [
+      "Rare",
+      "Limited",
+      "Sparse",
+      "Plentiful"
+    ],
+    "answer_idx": 3,
+    "explanation": "\"Scarce\" means in short supply; \"plentiful\" means there is more than enough."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Hard",
+    "prompt": "What does 'pragmatic' mean?",
+    "options": [
+      "Idealistic",
+      "Practical and realistic",
+      "Overly emotional",
+      "Forgetful"
+    ],
+    "answer_idx": 1,
+    "explanation": "A pragmatic person deals with problems in a sensible, practical way rather than by theory."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What does the prefix 'un-' usually mean?",
+    "options": [
+      "Again",
+      "Before",
+      "Not",
+      "Too much"
+    ],
+    "answer_idx": 2,
+    "explanation": "\"Un-\" reverses or negates: unhappy = not happy. \"Re-\" means again and \"pre-\" means before."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Hard",
+    "prompt": "What does 'gregarious' mean?",
+    "options": [
+      "Very large",
+      "Gloomy",
+      "Sociable; fond of company",
+      "Greedy"
+    ],
+    "answer_idx": 2,
+    "explanation": "From Latin grex (flock): a gregarious person enjoys being with others."
+  },
+  {
+    "subject": "English Vocabulary",
+    "difficulty": "Easy",
+    "prompt": "What is a person who writes books called?",
+    "options": [
+      "An editor",
+      "A publisher",
+      "An author",
+      "A librarian"
+    ],
+    "answer_idx": 2,
+    "explanation": "An author writes the book; an editor improves it, and a publisher produces and sells it."
   }
 ]

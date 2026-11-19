@@ -8,12 +8,14 @@ use App\Http\Auth;
 use App\Http\Request;
 use App\Services\AdminService;
 use App\Services\AuthService;
+use App\Services\QuestionService;
 
 final class AdminController
 {
     public function __construct(
         private AdminService $admin = new AdminService(),
         private AuthService $auth = new AuthService(),
+        private QuestionService $questions = new QuestionService(),
     ) {}
 
     public function stats(Request $r): array         { return ['stats' => $this->admin->stats()]; }
@@ -40,5 +42,39 @@ final class AdminController
     {
         $this->auth->changeAdminPassword(Auth::adminId(), $r->required('current_password'), $r->required('new_password'));
         return ['message' => 'Password updated'];
+    }
+
+    // ---- Question bank ------------------------------------------------------
+
+    public function questions(Request $r): array
+    {
+        return $this->questions->list([
+            'subject' => $r->string('subject'), 'difficulty' => $r->string('difficulty'),
+            'status' => $r->string('status'), 'q' => $r->string('q'),
+        ]);
+    }
+
+    public function saveQuestion(Request $r): array
+    {
+        $id = $r->get('id');
+        $question = $this->questions->save($id === null || $id === '' ? null : $r->int('id'), [
+            'subject' => $r->get('subject'), 'difficulty' => $r->get('difficulty'), 'prompt' => $r->get('prompt'),
+            'options' => $r->get('options'), 'answer_idx' => $r->get('answer_idx'),
+            'explanation' => $r->get('explanation'), 'active' => $r->get('active', true),
+        ]);
+        return ['question' => $question];
+    }
+
+    public function questionStatus(Request $r): array
+    {
+        $this->questions->setActive($r->int('id'), filter_var($r->get('active'), FILTER_VALIDATE_BOOLEAN));
+        return ['message' => 'Question updated'];
+    }
+
+    public function importQuestions(Request $r): array
+    {
+        $csv = $r->get('csv');
+        if (!is_string($csv) || trim($csv) === '') throw \App\Support\ApiError::badRequest('CSV_EMPTY', 'Choose a CSV file to import');
+        return $this->questions->importCsv($csv);
     }
 }

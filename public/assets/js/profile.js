@@ -20,18 +20,43 @@ function render(data) {
   $('accuracy').textContent = answered ? Math.round((user.correct_answers / answered) * 100) + '%' : '—';
   $('avatar').src = App.avatar(user.avatar, user.username);
 
-  for (const p of ['timeFreeze', 'hint', 'skip', 'scoreDoubler']) {
+  for (const p of ['timeFreeze', 'hint', 'skip', 'scoreDoubler', 'streakFreeze']) {
     $(p + 'Count').textContent = wallet.inventory[p] || 0;
   }
 
-  $('badges').innerHTML = user.badges
-    .map((b) => `<span class="chip chip-accent">${App.icon('award')}${App.escape(b)}</span>`).join('');
-  $('noBadges').hidden = user.badges.length > 0;
+  renderMastery(data.learning);
+  renderAchievements(data.achievements);
 
   $('username').value = user.username;
   $('email').value = user.email;
   $('headerUserName').textContent = user.username;
   $('headerUserEmail').textContent = user.email;
+}
+
+function renderMastery(learning) {
+  const due = learning.reviews_due;
+  $('reviewChip').textContent = due ? `${due} to revisit` : (learning.reviewing ? `${learning.reviewing} in review` : 'Nothing to revisit');
+  $('reviewChip').className = 'chip' + (due ? ' chip-warning' : '');
+  $('masteryList').innerHTML = learning.mastery.map((m) => `
+    <div class="mastery-row">
+      <div class="mastery-head">
+        <span>${App.escape(m.subject)}</span>
+        <span>${m.known} of ${m.total} known${m.accuracy === null ? '' : ` · ${m.accuracy}% accuracy`}</span>
+      </div>
+      <div class="progress"><span style="width:${m.mastery}%"></span></div>
+    </div>`).join('');
+}
+
+function renderAchievements(list) {
+  const done = list.filter((a) => a.unlocked_at).length;
+  $('achSummary').textContent = `${done} of ${list.length} unlocked`;
+  // Unlocked first (newest first), then locked in catalogue order.
+  const sorted = [...list].sort((a, b) => (b.unlocked_at || '').localeCompare(a.unlocked_at || ''));
+  $('achGrid').innerHTML = sorted.map((a) => `
+    <div class="ach ${a.unlocked_at ? 'is-unlocked' : 'is-locked'}" title="${a.unlocked_at ? 'Unlocked ' + App.escape(new Date(a.unlocked_at.replace(' ', 'T')).toLocaleDateString()) : 'Locked'}">
+      <div class="icon-box">${App.icon(a.unlocked_at ? a.icon : 'lock')}</div>
+      <div><div class="ach-name">${App.escape(a.name)}</div><div class="ach-desc">${App.escape(a.description)}</div></div>
+    </div>`).join('');
 }
 
 async function load() {

@@ -4,8 +4,9 @@
   const ICONS = {
     timeFreeze: 'snowflake', hint: 'search', skip: 'skip', scoreDoubler: 'trend',
     pack: 'package', megaPack: 'gem', skin2: 'shirt', skin3: 'shirt',
-    forest: 'image', space: 'image', speedBoost: 'zap', shield: 'shield',
+    forest: 'image', space: 'image', speedBoost: 'zap', shield: 'shield', streakFreeze: 'flame',
   };
+  const MAX = { streakFreeze: window.ShopRules?.streakFreezeMax ?? 2 };
 
   function render({ items, wallet }) {
     document.getElementById('coinCount').textContent = wallet.coins.toLocaleString();
@@ -16,13 +17,15 @@
       items.filter((i) => kinds.includes(i.kind)).forEach((item) => {
         const cosmetic = item.kind === 'skin' || item.kind === 'theme';
         const owned = cosmetic && item.owned > 0;
+        const equipped = owned && wallet.equipped[item.kind] === item.code;
+        const atMax = MAX[item.code] !== undefined && item.owned >= MAX[item.code];
         const div = document.createElement('div');
         div.className = 'card item';
         div.innerHTML = `
           <div class="row-between">
             <div class="icon-box">${App.icon(ICONS[item.code] || 'package')}</div>
             ${!cosmetic && item.owned ? `<span class="chip">You have ${item.owned}</span>` : ''}
-            ${owned ? `<span class="chip chip-success">${App.icon('check')}Owned</span>` : ''}
+            ${equipped ? `<span class="chip chip-accent">${App.icon('check')}Equipped</span>` : owned ? '<span class="chip">Owned</span>' : ''}
             ${!item.active ? '<span class="chip">Coming soon</span>' : ''}
           </div>
           <div>
@@ -38,7 +41,12 @@
           btn.textContent = 'Unavailable';
           btn.disabled = true;
         } else if (owned) {
-          btn.textContent = 'Owned';
+          // Owned cosmetics toggle between this and the default look.
+          btn.textContent = equipped ? 'Unequip' : 'Equip';
+          btn.className = equipped ? 'btn btn-ghost btn-sm' : 'btn btn-secondary btn-sm';
+          btn.addEventListener('click', () => equip(item, equipped ? '' : item.code, btn));
+        } else if (atMax) {
+          btn.textContent = `Max ${MAX[item.code]}`;
           btn.disabled = true;
         } else {
           btn.textContent = 'Buy';
@@ -64,6 +72,18 @@
     try {
       await App.api('/api/shop/buy', { body: { item: item.code } });
       App.toast(`Bought ${item.name}`, 'success');
+      await load();
+    } catch (e) {
+      App.toast(e.message, 'danger');
+      btn.disabled = false;
+    }
+  }
+
+  async function equip(item, code, btn) {
+    btn.disabled = true;
+    try {
+      await App.api('/api/shop/equip', { body: { kind: item.kind, item: code } });
+      App.toast(code ? `${item.name} equipped` : 'Back to the default look', 'success');
       await load();
     } catch (e) {
       App.toast(e.message, 'danger');

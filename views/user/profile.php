@@ -2,7 +2,7 @@
 $title = 'Profile';
 $active = 'profile';
 require __DIR__ . '/../layouts/app-start.php';
-$powers = [['timeFreeze', 'snowflake', 'Time freeze'], ['hint', 'search', 'Hint'], ['skip', 'skip', 'Skip gate'], ['scoreDoubler', 'trend', 'Score doubler']];
+$powers = [['timeFreeze', 'snowflake', 'Time freeze'], ['hint', 'search', 'Hint'], ['skip', 'skip', 'Skip gate'], ['scoreDoubler', 'trend', 'Score doubler'], ['streakFreeze', 'flame', 'Streak freeze']];
 ?>
 
 <div class="page-head">
@@ -67,19 +67,29 @@ $powers = [['timeFreeze', 'snowflake', 'Time freeze'], ['hint', 'search', 'Hint'
 
     <div class="card">
       <div class="card-head"><div class="card-title">Power-ups</div><a class="btn btn-ghost btn-sm" href="<?= url('shop') ?>">Shop<?= icon('arrow-right', 'icon-sm') ?></a></div>
-      <div class="inv-grid">
+      <div class="inv-grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">
         <?php foreach ($powers as [$code, $ico, $label]): ?>
           <div class="inv"><?= icon($ico) ?><div><div class="inv-count" id="<?= $code ?>Count">0</div><div class="inv-name"><?= e($label) ?></div></div></div>
         <?php endforeach; ?>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-head"><div class="card-title">Badges</div></div>
-      <div id="badges" class="badge-list"></div>
-      <p id="noBadges" class="subtle" style="font-size:14px">No badges yet. Reach level 5, save 500 coins or keep a 10-day streak.</p>
-    </div>
   </div>
+</div>
+
+<div class="card mt-16" id="mastery">
+  <div class="card-head">
+    <div><div class="card-title">Subject mastery</div><div class="card-sub">Share of each subject's questions you've answered correctly at least once</div></div>
+    <span class="chip" id="reviewChip">—</span>
+  </div>
+  <div class="mastery" id="masteryList"><div class="empty">Loading…</div></div>
+</div>
+
+<div class="card mt-16" id="achievements">
+  <div class="card-head">
+    <div><div class="card-title">Achievements</div><div class="card-sub" id="achSummary">—</div></div>
+  </div>
+  <div class="ach-grid" id="achGrid"></div>
 </div>
 
 <?= page_script('profile') ?>

@@ -607,6 +607,80 @@ button { cursor: pointer; }
 .spinner { width: 20px; height: 20px; margin: 0 auto 8px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ---- Answer feedback & run summary ----------------------------------------------------------------------- */
+.answers.is-revealed .answer { cursor: default; }
+.answers.is-revealed .answer:not(.is-correct):not(.is-wrong) { opacity: .55; }
+.answer.is-correct { border-color: var(--success); background: var(--success-soft); color: var(--text); }
+.answer.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.answer.is-correct .kbd { border-color: var(--success); color: var(--success); }
+.answer.is-wrong .kbd { border-color: var(--danger); color: var(--danger); }
+.feedback { margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); font-size: 14px; }
+.feedback[hidden] { display: none; }
+.feedback-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.feedback-title .icon { width: 18px; height: 18px; }
+.feedback.is-correct .feedback-title { color: var(--success); }
+.feedback.is-wrong .feedback-title { color: var(--danger); }
+.feedback p { margin-top: 6px; color: var(--text-2); line-height: 1.5; }
+.question-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.question-foot .btn { margin-left: auto; }
+
+.result-stats-4 { grid-template-columns: repeat(4, 1fr); }
+.reward-lines { margin-top: 14px; display: grid; gap: 6px; font-size: 14px; text-align: left; }
+.reward-lines div { display: flex; justify-content: space-between; color: var(--text-2); }
+.reward-lines strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.recap { margin-top: 20px; text-align: left; }
+.recap h3 { font-size: 14px; }
+.recap-item { padding: 12px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.recap-item:first-of-type { margin-top: 10px; }
+.recap-q { font-weight: 500; }
+.recap-a { margin-top: 4px; color: var(--text-2); }
+.recap-a .ok { color: var(--success); font-weight: 500; }
+.recap-why { margin-top: 4px; color: var(--text-3); font-size: 13px; line-height: 1.5; }
+.callout { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); text-align: left; font-size: 14px; }
+.callout .grow { flex: 1; min-width: 0; }
+.callout-accent { background: var(--accent-soft); }
+
+/* ---- On-screen controls (touch devices) -------------------------------------------------------------------- */
+.dpad { display: none; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 56px); gap: 6px; justify-content: center; margin-top: 14px; user-select: none; -webkit-user-select: none; touch-action: none; }
+.dpad button { display: grid; place-items: center; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2); }
+.dpad button:active, .dpad button.is-held { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.dpad .up { grid-column: 2; grid-row: 1; }
+.dpad .left { grid-column: 1; grid-row: 2; }
+.dpad .down { grid-column: 2; grid-row: 2; }
+.dpad .right { grid-column: 3; grid-row: 2; }
+@media (pointer: coarse) {
+  .dpad { display: grid; }
+  .board-foot .keys-hint { display: none; }
+}
+
+/* ---- Achievements & mastery ---------------------------------------------------------------------------------- */
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.ach { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); }
+.ach .icon-box { flex: none; }
+.ach.is-unlocked .icon-box { background: var(--accent-soft); color: var(--accent); }
+.ach.is-locked { border-style: dashed; }
+.ach.is-locked .ach-name, .ach.is-locked .icon-box { opacity: .5; }
+.ach-name { font-size: 14px; font-weight: 600; }
+.ach-desc { font-size: 12px; color: var(--text-3); line-height: 1.4; }
+.mastery { display: grid; gap: 14px; }
+.mastery-row { display: grid; gap: 6px; font-size: 14px; }
+.mastery-head { display: flex; justify-content: space-between; gap: 12px; }
+.mastery-head span:last-child { color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+/* ---- Admin question bank ---------------------------------------------------------------------------------------- */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px; border-bottom: 1px solid var(--border); }
+.toolbar .input { width: auto; min-width: 140px; height: 36px; font-size: 14px; }
+.toolbar .grow { flex: 1; min-width: 180px; }
+.table td.wrap { white-space: normal; min-width: 280px; }
+.table tr.is-archived td { color: var(--text-3); }
+.option-inputs { display: grid; gap: 8px; }
+.option-input { display: flex; align-items: center; gap: 10px; }
+.option-input .input { font-size: 15px; font-weight: 400; color: var(--text); }
+.option-input input[type=radio] { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+textarea.input { height: auto; min-height: 72px; padding-top: 10px; padding-bottom: 10px; resize: vertical; font: inherit; }
+.form-hint { font-size: 13px; color: var(--text-3); }
+.import-errors { white-space: pre-wrap; font-size: 13px; color: var(--danger); background: var(--danger-soft); border-radius: 10px; padding: 12px; max-height: 200px; overflow: auto; }
+
 /* ---- Responsive ------------------------------------------------------------------------------------------------ */
 @media (max-width: 1080px) {
   .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -641,6 +715,7 @@ button { cursor: pointer; }
 }
 @media (max-width: 560px) {
   .grid-4 { grid-template-columns: 1fr 1fr; }
+  .result-stats-4 { grid-template-columns: 1fr 1fr; }
   .feature-grid, .steps { grid-template-columns: 1fr; }
   .step { border-right: 0; border-bottom: 1px solid var(--border); }
   .step:last-child { border-bottom: 0; }

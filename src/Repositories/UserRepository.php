@@ -84,19 +84,27 @@ final class UserRepository
         $this->db->prepare('UPDATE users SET last_checkin = ?, streak = ? WHERE id = ?')->execute([$date, $streak, $id]);
     }
 
-    public function badges(int $id): array
+    /** @return array<string,string> achievement code => unlocked_at */
+    public function achievements(int $id): array
     {
-        $s = $this->db->prepare('SELECT badge_name FROM user_badges WHERE user_id = ? ORDER BY awarded_at');
+        $s = $this->db->prepare('SELECT code, unlocked_at FROM user_achievements WHERE user_id = ? ORDER BY unlocked_at, code');
         $s->execute([$id]);
-        return $s->fetchAll(PDO::FETCH_COLUMN);
+        return $s->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
-    // Returns true if the badge was newly awarded.
-    public function awardBadge(int $id, string $badge): bool
+    // Returns true if the achievement was newly unlocked.
+    public function unlockAchievement(int $id, string $code): bool
     {
-        $s = $this->db->prepare('INSERT IGNORE INTO user_badges (user_id, badge_name) VALUES (?, ?)');
-        $s->execute([$id, $badge]);
+        $s = $this->db->prepare('INSERT IGNORE INTO user_achievements (user_id, code) VALUES (?, ?)');
+        $s->execute([$id, $code]);
         return $s->rowCount() === 1;
+    }
+
+    /** @param 'skin'|'theme' $kind */
+    public function equip(int $id, string $kind, ?string $code): void
+    {
+        $column = $kind === 'skin' ? 'equipped_skin' : 'equipped_theme';
+        $this->db->prepare("UPDATE users SET $column = ? WHERE id = ?")->execute([$code, $id]);
     }
 
     /** @param 'xp'|'coins'|'level'|'streak' $orderBy */
@@ -111,12 +119,14 @@ final class UserRepository
     }
 
     // XP earned since Monday of the current week (database clock), from the ledger.
+    // Balances carried over or granted by an admin don't count as earned.
     public function weeklyLeaderboard(int $limit): array
     {
         $s = $this->db->prepare("SELECT u.id, u.username, u.level, u.coins, u.streak, u.avatar, u.total_games,
                                         SUM(l.xp_delta) AS xp
                                  FROM ledger l JOIN users u ON u.id = l.user_id
-                                 WHERE l.created_at >= CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY AND l.reason <> 'opening_balance'
+                                 WHERE l.created_at >= CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY
+                                   AND l.reason NOT IN ('opening_balance', 'admin_grant')
                                    AND u.role = 'user' AND u.is_active = 1
                                  GROUP BY u.id HAVING xp > 0
                                  ORDER BY xp DESC, u.id ASC LIMIT ?");

@@ -12,14 +12,19 @@ final class RunController
 {
     public function __construct(private RunService $runs = new RunService()) {}
 
+    // mode: normal (default) | daily | challenge (with 'code')
     public function start(Request $r): array
     {
-        $replay = $r->get('replay_of');
-        $state = $this->runs->start(
-            Auth::playerId(), $r->required('difficulty'), $r->required('subject'),
-            $replay === null || $replay === '' ? null : $r->int('replay_of'),
-        );
-        return ['run' => $state];
+        $userId = Auth::playerId();
+        return match ($r->string('mode', 'normal')) {
+            'daily'     => $this->runs->startDaily($userId),
+            'challenge' => $this->runs->startChallenge($userId, $r->required('code')),
+            'normal'    => $this->runs->start(
+                $userId, $r->required('difficulty'), $r->required('subject'),
+                $r->get('replay_of') === null || $r->get('replay_of') === '' ? null : $r->int('replay_of'),
+            ),
+            default     => throw \App\Support\ApiError::badRequest('INVALID_MODE', 'Unknown mode'),
+        };
     }
 
     public function question(Request $r): array
@@ -37,6 +42,11 @@ final class RunController
         $gate = $r->get('gate_no');
         return $this->runs->usePowerup(Auth::playerId(), $r->int('run_id'), $r->required('type'),
             $gate === null || $gate === '' ? null : $r->int('gate_no'));
+    }
+
+    public function pickup(Request $r): array
+    {
+        return $this->runs->pickup(Auth::playerId(), $r->int('run_id'), $r->int('pickup_no'));
     }
 
     public function complete(Request $r): array

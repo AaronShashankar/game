@@ -21,8 +21,8 @@ $fmt = fn (?int $s) => $s ? floor($s / 60) . ':' . str_pad((string) ($s % 60), 2
 
 <div class="steps">
   <div class="step"><span class="step-no">01</span><h3>Pick a level</h3><p>Choose a difficulty and a subject — or mixed mode for everything.</p></div>
-  <div class="step"><span class="step-no">02</span><h3>Walk the maze</h3><p>Move with the arrow keys or WASD. On a phone, swipe on the maze.</p></div>
-  <div class="step"><span class="step-no">03</span><h3>Open the gates</h3><p>Walking into a numbered gate asks a question. Answer it to pass.</p></div>
+  <div class="step"><span class="step-no">02</span><h3>Walk the maze</h3><p>Move with the arrow keys or WASD. On a phone, swipe on the maze or use the arrow pad.</p></div>
+  <div class="step"><span class="step-no">03</span><h3>Open the gates</h3><p>Walking into a numbered gate asks a question. Miss it and you see the right answer and why.</p></div>
   <div class="step"><span class="step-no">04</span><h3>Reach the exit</h3><p>The dark tile in the bottom-right corner. Faster runs earn a time bonus.</p></div>
 </div>
 
@@ -36,7 +36,10 @@ $fmt = fn (?int $s) => $s ? floor($s / 60) . ':' . str_pad((string) ($s % 60), 2
       <div><dt>Combo (answers in a row)</dt><dd>+<?= R::COMBO_STEP ?> each, up to +<?= R::COMBO_MAX_BONUS ?></dd></div>
       <div><dt>Finishing the maze</dt><dd><?= R::COMPLETE_COINS ?> coins · <?= R::COMPLETE_XP ?> XP, × difficulty</dd></div>
       <div><dt>Time bonus</dt><dd>1 coin per <?= R::TIME_BONUS_DIVISOR ?>s left</dd></div>
+      <div><dt>Coins found in dead ends</dt><dd><?= R::PICKUP_COINS ?> each, paid when you finish</dd></div>
+      <div><dt>Finishing the daily maze</dt><dd>+<?= R::DAILY_BONUS_COINS ?> coins · +<?= R::DAILY_BONUS_XP ?> XP</dd></div>
       <div><dt>Daily check-in</dt><dd><?= R::CHECKIN_BASE ?> coins + <?= R::CHECKIN_PER_STREAK_DAY ?>/streak day</dd></div>
+      <div><dt>Weekly top 3 (by XP)</dt><dd><?= implode(' / ', R::WEEKLY_PRIZES) ?> coins</dd></div>
     </dl>
   </div>
   <div class="card">
@@ -54,13 +57,14 @@ $fmt = fn (?int $s) => $s ? floor($s / 60) . ':' . str_pad((string) ($s % 60), 2
   <div style="padding:20px 24px 4px"><div class="card-title">Difficulty levels</div></div>
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Level</th><th class="num">Maze</th><th class="num">Gates</th><th class="num">Time limit</th><th class="num">Wrong-answer penalty</th><th>Fog of war</th><th class="num">Rewards</th></tr></thead>
+      <thead><tr><th>Level</th><th class="num">Maze</th><th class="num">Gates</th><th class="num">Coins to find</th><th class="num">Time limit</th><th class="num">Wrong-answer penalty</th><th>Fog of war</th><th class="num">Rewards</th></tr></thead>
       <tbody>
         <?php foreach ($difficulties as $name => $d): ?>
           <tr>
             <td><strong style="font-weight:600"><?= e($name) ?></strong></td>
             <td class="num"><?= $d['size'] ?> × <?= $d['size'] ?></td>
             <td class="num"><?= $d['gates'] ?></td>
+            <td class="num"><?= $d['pickups'] ?></td>
             <td class="num"><?= $fmt($d['time']) ?></td>
             <td class="num"><?= $d['penalty'] ? $d['penalty'] . ' coins' : '—' ?></td>
             <td><?= $d['fog'] ? 'Yes' : 'No' ?></td>
@@ -69,6 +73,17 @@ $fmt = fn (?int $s) => $s ? floor($s / 60) . ':' . str_pad((string) ($s % 60), 2
         <?php endforeach; ?>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div class="card mt-16">
+  <div class="card-head"><div class="card-title">More ways to play</div></div>
+  <div class="list">
+    <div class="list-row"><div class="icon-box"><?= icon('calendar') ?></div><div class="grow"><div class="list-title">Daily maze</div><div class="list-meta">One <?= strtolower(R::DAILY_DIFFICULTY) ?> maze a day, the same for everyone, with mixed questions. Play it once and see where you rank today.</div></div></div>
+    <div class="list-row"><div class="icon-box"><?= icon('refresh') ?></div><div class="grow"><div class="list-title">Reviews</div><div class="list-meta">Questions you miss come back in later mazes (up to <?= R::MAX_REVIEWS_PER_RUN ?> per maze), then less and less often as you get them right. Your profile shows how well you know each subject.</div></div></div>
+    <div class="list-row"><div class="icon-box"><?= icon('swords') ?></div><div class="grow"><div class="list-title">Challenge a friend</div><div class="list-meta">After a maze, share a link. Your friend plays the same maze with the same questions and tries to beat your time.</div></div></div>
+    <div class="list-row"><div class="icon-box"><?= icon('award') ?></div><div class="grow"><div class="list-title">Achievements</div><div class="list-meta">Unlock them for perfect runs, long combos, hard mazes, quick finishes and more.</div></div></div>
+    <div class="list-row"><div class="icon-box"><?= icon('flame') ?></div><div class="grow"><div class="list-title">Streak freeze</div><div class="list-meta">Buy one in the shop and hold up to <?= R::STREAK_FREEZE_MAX ?>. Each missed day uses one, so your check-in streak keeps going.</div></div></div>
   </div>
 </div>
 

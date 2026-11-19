@@ -3,6 +3,21 @@
 (function () {
   const $ = (id) => document.getElementById(id);
 
+  // Where to go after signing in: ?next=/some/page (same-site paths only,
+  // so the parameter can't be used to bounce people to another website).
+  function nextUrl(fallback) {
+    const next = new URLSearchParams(location.search).get('next') || '';
+    return /^\/(?![\/\\])[\w\-\/?=&%.]*$/.test(next) ? App.url(next.slice(1)) : App.url(fallback);
+  }
+
+  // Keep ?next= on the link between the login and sign-up pages.
+  const next = new URLSearchParams(location.search).get('next');
+  if (next) {
+    document.querySelectorAll('.auth-foot a').forEach((a) => {
+      a.href += (a.href.includes('?') ? '&' : '?') + 'next=' + encodeURIComponent(next);
+    });
+  }
+
   function bind(formId, handler) {
     const form = $(formId);
     if (form) form.addEventListener('submit', (e) => { e.preventDefault(); handler(form); });
@@ -29,7 +44,7 @@
       try {
         await App.api(isAdmin ? '/api/auth/admin-login' : '/api/auth/login',
           { body: { email: fd.get('email'), password: fd.get('password') } });
-        location.href = App.url(isAdmin ? 'admin-panel' : 'dashboard');
+        location.href = isAdmin ? App.url('admin-panel') : nextUrl('dashboard');
       } catch (err) {
         error.textContent = err.message;
       }
@@ -58,7 +73,7 @@
         await App.api('/api/auth/register', { body });
         // Sign straight in with the same credentials.
         await App.api('/api/auth/login', { body: { email: body.email, password: body.password } });
-        location.href = App.url('dashboard');
+        location.href = nextUrl('dashboard');
       } catch (e) {
         error.textContent = e.message;
       }

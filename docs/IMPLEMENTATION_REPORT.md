@@ -115,13 +115,16 @@ A run request rejected for a reason that suggests tampering (`TOO_FAST`, `GATES_
 |---|---|
 | `users` | Players only. Holds `coins`, lifetime `xp`, `level`, `streak`, `last_checkin`, `is_active`, `avatar` (MEDIUMTEXT) |
 | `admin` | Admin accounts (separate table and session key) |
-| `questions` | `subject`, `prompt`, `options` (JSON), `answer_idx`, `active` (34 seeded) |
-| `runs` | One game: `seed`, `difficulty`, `subject`, `status` (active/completed/abandoned), `deadline_at`, `freeze_until`, `combo`, `doubler`, `coins_earned`, `xp_earned` |
+| `questions` | `subject`, `difficulty`, `prompt`, `options` (JSON), `answer_idx`, `explanation`, `active`, `updated_at` (NULL = untouched seed). 145 seeded |
+| `runs` | One game: `seed`, `difficulty`, `subject`, `status` (active/completed/abandoned), `deadline_at`, `freeze_until`, `combo`, `doubler`, `coins_earned`, `xp_earned`. Since 004 also `mode` (normal/daily/challenge), `daily_date`, `challenge_of`, `share_code`, `pickup_count`, `pickups_mask`, `best_combo`, `reviews_served`, `duration_seconds` |
 | `run_gates` | Per-gate state: `question_id`, `served_at` (ms), `status` (pending/cleared/skipped), `attempts` |
 | `run_answers` | Every answer attempt. `UNIQUE(run_id, gate_no, attempt_no)` makes answers idempotent |
 | `ledger` | Every coin/XP change. `UNIQUE(user_id, reason, ref)` means each reward (e.g. `gate` + `run:12:gate:3`, `checkin` + `2026-11-19`) is paid at most once |
-| `items`, `inventory` | Shop catalogue (12 items, 4 marked "coming soon") and what each player owns |
-| `user_badges` | Badges earned (unique per user and badge) |
+| `items`, `inventory` | Shop catalogue (power-ups, cosmetics, and the `streakFreeze` perk) and what each player owns. `users.equipped_skin` / `equipped_theme` hold what's equipped |
+| `user_achievements` | Achievement codes unlocked (unique per user and code). Replaces `user_badges`, which was renamed `legacy_user_badges` |
+| `question_reviews` | Spaced-repetition state per player and question: `box` (1–5) and `due_at` |
+| `daily_mazes` | One row per date: the shared seed of that day's maze |
+| `weekly_settlements`, `weekly_rewards` | Which weeks have had prizes paid out, and who won what |
 | `security_log` | Login successes and failures, rejected runs |
 | `schema_migrations` | Which migration files have been applied |
 
@@ -137,13 +140,17 @@ All endpoints return JSON. A successful response is `{"success": true, …}`. An
 | POST | `/api/auth/login` · `/api/auth/admin-login` | — | Throttled per IP |
 | POST | `/api/auth/logout` | — | |
 | POST | `/api/auth/password` | player | Requires the current password |
-| GET | `/api/leaderboard?type=xp\|coins\|level\|streak\|weekly&limit=` | — | `weekly` = XP from the ledger since Monday |
+| GET | `/api/leaderboard?type=xp\|coins\|level\|streak\|weekly\|daily&limit=` | — | `weekly` = XP from the ledger since Monday (admin grants excluded). `daily` = today's maze by time |
 | GET / POST | `/api/me` | player | GET: profile, wallet, 7-day XP chart. POST: only username, email and avatar can be changed |
 | POST | `/api/checkin` · `/api/spin` | player | |
-| GET | `/api/shop` · POST `/api/shop/buy` | player | Price comes from the DB. Cosmetics can be bought only once |
-| POST | `/api/runs/{start,question,answer,powerup,complete,timeout}` | player | See §4 |
+| GET | `/api/shop` · POST `/api/shop/buy` | player | Price comes from the DB. Cosmetics can be bought only once, and are equipped when bought. Streak freezes are capped at 2 |
+| POST | `/api/shop/equip` | player | `{kind: skin\|theme, code\|null}`. Only owned items |
+| GET | `/api/daily` | player | Today's maze: whether you've played it, your time and rank |
+| POST | `/api/runs/{start,question,answer,powerup,pickup,complete,timeout}` | player | See §4 and §10. `start` takes `mode`: `normal` (difficulty, subject), `daily`, or `challenge` (code) |
 | GET | `/api/admin/{stats,users,activity,security-logs,analytics,export}` | admin | |
 | POST | `/api/admin/users` · `/api/admin/users/delete` · `/api/admin/password` | admin | Coins given by an admin are recorded in the ledger as `admin_grant` |
+| GET / POST | `/api/admin/questions` | admin | GET: search and filter, with answer counts and accuracy. POST: create or edit (`id`) |
+| POST | `/api/admin/questions/status` · `/api/admin/questions/import` | admin | Archive or restore a question. Import CSV text (see the README for the format) |
 
 ## 7. Migrating an existing database
 
@@ -157,12 +164,28 @@ All endpoints return JSON. A successful response is `{"success": true, …}`. An
   - Deactivates `users` rows with `role='admin'`, because admins now live in the `admin` table.
   - **Renames** old tables to `legacy_*` (leaderboard, player, game_session(s), maze, games, rewards, user_achievements). It never drops them.
 - **003_seed_questions_and_items** adds the 34 questions (only if the table is empty) and upserts the 12 shop items by `code`.
+- **004_learning_and_engagement** adds the columns and tables for §10:
+  - It upserts the question seed by prompt, and refreshes a seeded question only while `updated_at IS NULL`, so admin edits are never overwritten. On the dev database this added 111 questions and refreshed 34.
+  - It rewords 4 old prompts in place, so their answer history keeps the same question id.
+  - It converts old badges to achievement codes.
+  - It equips skins that players already own.
+  - It turns on the Forest and Space themes and adds the streak freeze item.
 
 **Test result:** a database built from the original `mazequest.sql`, with a level-3 player holding 40 XP and 120 coins plus an old admin row, was migrated. The player ended up with 340 XP, level 3, 120 coins, an `opening_balance` ledger row and 3 of each power-up. The admin row was set to `is_active=0`, and all 6 old tables present were renamed. A second run printed "Nothing to migrate."
 
 ## 8. Testing
 
 Tests ran against MariaDB 11 and PHP 8.3 + Apache in Docker.
+
+**Committed suite (since §10): `tests/`, 29/29 passing.** Run it with `docker compose exec -T web php tests/run.php`. Each run:
+- builds a fresh `mazequest_test` database from the migrations;
+- starts PHP's built-in server against that database;
+- runs the tests over HTTP, using a cookie-jar client;
+- after each test that moves coins or XP, checks that the ledger still adds up to the player's balance.
+
+It covers game rules, auth guards and the `?next=` redirect, runs (answers, reveal and explanation, pickups, summary, reviews, difficulty preference, mastery), the daily maze, challenges, streak freezes, cosmetics, weekly prizes, achievements, and the admin question editor and CSV import.
+
+The section below describes the earlier one-off API harness, which was not committed.
 
 **API tests: 52/52 passing, in two consecutive runs.** They cover:
 
@@ -214,15 +237,83 @@ All pages were rebuilt on one design system, [public/assets/css/app.css](../publ
   - The referral section, which was never implemented.
 - **`database/create_admin.php`** now refuses to touch an admin whose email or username doesn't match exactly. Before, a username clash silently reset another admin's password.
 
-## 10. Known limitations / follow-ups
+## 10. Learning & engagement features (2026-11-20)
+
+### 10.1 Learning
+- **Question bank.** Grew from 34 to 145 questions, each with a difficulty and a one-line explanation:
+  - By subject: Mathematics 30, General Knowledge 30, Science 29, History 28, English Vocabulary 28.
+  - By difficulty: 71 Easy, 52 Medium, 22 Hard.
+  - A normal maze picks, in order: up to 2 due reviews; then questions of the maze's difficulty; then any active question in the subject.
+- **Bug fixed in the original data.** "What is 5² + 3³?" had `34` marked correct, which is 5² + 3². The real answer, 52, was not among the options. It is fixed in the seed and in the migrated database.
+- **Correct answer after a wrong one.** The server reveals `correct_idx` and the explanation only after an answer is recorded:
+  - After a correct answer, the next gate draws a fresh question.
+  - After a wrong one, the gate's question is cleared, so the next attempt draws a different question.
+  - Either way, revealing the answer never lets the player pass a gate with it.
+- **Spaced repetition (Leitner).**
+  - A wrong answer puts the question in box 1, due now.
+  - A correct answer on a tracked question moves it up a box, due again in 1, 3, 7, 14, then 30 days.
+  - After the last box the question is considered learned and is dropped.
+  - Due reviews are served first, at most 2 per maze, and only from the chosen subject (or any subject in Mixed Mode).
+- **Mastery.** Per subject: the share of active questions the player has answered correctly at least once, plus overall accuracy. Shown on the profile and the dashboard.
+- **Admin question editor.**
+  - Search, filter by subject, difficulty and status, and see per-question answer counts and accuracy.
+  - Create and edit questions, and archive them. Questions are never deleted, because answers refer to them.
+  - CSV import is all-or-nothing, with row-level errors.
+
+### 10.2 Gameplay
+- **Daily maze.**
+  - One Medium, Mixed Mode maze per day. The seed and question order (`MD5(seed:id)`) are the same for everyone.
+  - One attempt per player (`UNIQUE(user_id, daily_date)`).
+  - Leaving and coming back resumes the same run.
+  - Finishing pays a bonus of +50 coins and +20 XP.
+  - It has its own leaderboard, ranked by time.
+- **Coin pickups.**
+  - Each maze puts 3, 4 or 5 coins in dead ends, depending on difficulty.
+  - Their positions come from the seed, so the client places them.
+  - Each one collected is recorded in a bitmask on the run, which makes collecting idempotent.
+  - They pay 5 coins each, only when the run is completed, so an abandoned or timed-out run pays nothing.
+- **Run summary:**
+  - time, accuracy, best combo, coins found, and an itemised list of rewards;
+  - the questions the player missed, with the correct answers;
+  - daily rank, or the result against the challenger.
+- **Themes and skins.** Forest and Space change the maze palette (Space adds a star field). Skins change the player's colour. Buying one equips it, and the shop has Equip/Unequip.
+- **Touch arrow pad.** Shown on coarse pointers. Holding a direction repeats the move every 150 ms. Swipe still works.
+- **Sound.** Short WebAudio tones, so there are no files to download. The mute choice is saved per device.
+
+### 10.3 Retention
+- **13 achievements.** First clear, Flawless, Combo ×5, Hard clear, Speedrunner, Daily player, Challenge won, All-rounder, Scholar, Level 5/10, Rich, 10-day streak. They are checked after answers, completions, check-ins and level-ups, and newly unlocked ones show as toasts.
+- **Challenge a friend.**
+  - Every completed run except the daily maze gets an 8-character share code. The daily maze has none, because the link would give away that day's maze and questions. The code avoids look-alike characters such as 0/O and 1/I.
+  - `/challenge?code=` is public. Guests are sent to register or log in, then straight into the game (`?next=`, same-site paths only).
+  - The challenger's run copies the seed, difficulty and subject, and serves the same question at each gate and attempt.
+- **Weekly prizes.**
+  - Last week's top 3 by XP get 300, 200 and 100 coins.
+  - XP counts ledger entries, excluding opening balances and admin grants.
+  - Prizes are settled lazily, the first time in a new week that anyone loads their profile/dashboard data (`/api/me`) or the weekly leaderboard. An `INSERT IGNORE` into `weekly_settlements` works as the lock, and the ledger key `weekly_prize` + week start stops double payment.
+- **Streak freeze.**
+  - A 50-coin perk. A player can hold at most 2.
+  - At check-in, each missed day uses one freeze. If the player doesn't hold enough to cover the gap, the streak resets and their freezes are kept.
+
+### 10.4 Trust model for the new parts
+- **Pickup positions are computed on the client.** The server only checks that a pickup number is in range for the difficulty. It does not check that the player actually walked there (see §4: movement isn't validated). The payout is small and capped, and only paid on a completed run.
+- **Challenge and daily runs go through the same answer-timing and minimum-duration checks as normal runs.**
+- **The daily maze can be played only once.** Replaying it is refused with `DAILY_DONE`.
+- **A challenge earns the same rewards as any other maze of that difficulty.** Retrying one gives no extra payout.
+
+## 11. Known limitations / follow-ups
 
 - **Movement is not validated.** The server enforces the order of gates, answers and timing. It doesn't replay the player's path through the maze. A modified client could skip walking, but it still has to answer every question correctly and wait at least the minimum run time. Server-side path replay would be the next step if needed.
-- **Question bank is small**: 34 questions, so Mixed Mode draws from those 34. *(I said "68" earlier in our conversation. That was wrong.)* Admins can't edit questions from the panel yet.
-- **Not implemented:** referrals, maze themes (Forest/Space are listed as "coming soon"), Speed Boost and Shield.
+- **Question bank is still modest:** 145 questions, and only 22 of them are Hard. Hard mazes fall back to Medium or Easy questions once the Hard ones in a subject are used up. Admins can now add more from the panel.
+- **Not implemented:** referrals, Speed Boost and Shield.
+- **Resuming the daily maze starts the player back at the entrance.** Cleared gates and collected coins are kept. Only the position on the board isn't saved.
+- **Challenges with more attempts than the original.** If the friend needs more attempts at a gate than the challenger did, the extra attempts get ordinary random questions.
+- **Challenges can be retried.** The friend can accept the same challenge again and again, and so learn its questions before setting a winning time. Capping it at one attempt per player and challenge would need a unique key, as the daily maze has.
+- **Forest and Space themes ignore dark mode.** They use their own fixed palettes.
+- **Correct answers can promote questions early.** A correct answer to a tracked question moves it up a box even if it wasn't due yet, which happens when it comes up in a normal draw.
 - **Only tested in Docker** (MariaDB 11 / PHP 8.3). It has not been run on a real XAMPP install. The minimum versions in the README are inferred, not tested.
 - **`legacy_*` tables** are kept for safety. Drop them by hand once you're sure the migrated data is correct.
 - **`docs/legacy/`** describes the old `api/*.php` functions and is out of date.
-- No automated tests are committed to the repo. The API test script was a one-off harness. Adding PHPUnit and a CI job would be the obvious next step.
+- **No CI yet.** The test suite exists (§8) but nothing runs it automatically. A GitHub Actions job using `docker compose` would be the next step.
 - Avatars are stored as data URLs in the DB (≤300 KB). Move them to file or object storage if there will be many users.
 
 setup admin password

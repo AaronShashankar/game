@@ -9,6 +9,7 @@ use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\RunController;
 use App\Http\Router;
 use App\Repositories\QuestionRepository;
+use App\Services\ChallengeService;
 use App\Services\GameRules;
 
 return function (Router $r): void {
@@ -32,6 +33,8 @@ return function (Router $r): void {
     $r->get('/choose-subject', $withRules('user/choose-subject'), 'player');
     $r->get('/game',           $withRules('user/game'), 'player');
     $r->get('/admin-panel',    $page('admin/panel'), 'admin');
+    // Public landing page for a "challenge a friend" link.
+    $r->get('/challenge', fn ($req) => view('user/challenge', ['challenge' => (new ChallengeService())->info($req->string('code'))]));
 
     // ---- Auth ----------------------------------------------------------------
     $auth = new AuthController();
@@ -50,6 +53,8 @@ return function (Router $r): void {
     $r->post('/api/spin',       [$player, 'spin'], 'player');
     $r->get('/api/shop',        [$player, 'shop'], 'player');
     $r->post('/api/shop/buy',   [$player, 'buy'], 'player');
+    $r->post('/api/shop/equip', [$player, 'equip'], 'player');
+    $r->get('/api/daily',       [$player, 'daily'], 'player');
 
     // ---- Game runs -----------------------------------------------------------
     $run = new RunController();
@@ -57,6 +62,7 @@ return function (Router $r): void {
     $r->post('/api/runs/question', [$run, 'question'], 'player');
     $r->post('/api/runs/answer',   [$run, 'answer'], 'player');
     $r->post('/api/runs/powerup',  [$run, 'powerup'], 'player');
+    $r->post('/api/runs/pickup',   [$run, 'pickup'], 'player');
     $r->post('/api/runs/complete', [$run, 'complete'], 'player');
     $r->post('/api/runs/timeout',  [$run, 'timeout'], 'player');
 
@@ -71,4 +77,8 @@ return function (Router $r): void {
     $r->get('/api/admin/analytics',      [$admin, 'analytics'], 'admin');
     $r->get('/api/admin/export',         [$admin, 'export'], 'admin');
     $r->post('/api/admin/password',      [$admin, 'changePassword'], 'admin');
+    $r->get('/api/admin/questions',          [$admin, 'questions'], 'admin');
+    $r->post('/api/admin/questions',         [$admin, 'saveQuestion'], 'admin');
+    $r->post('/api/admin/questions/status',  [$admin, 'questionStatus'], 'admin');
+    $r->post('/api/admin/questions/import',  [$admin, 'importQuestions'], 'admin');
 };

@@ -56,22 +56,6 @@ final class ProgressionService
         return 0;
     }
 
-    // Badge rules (previously checked in the browser). Returns new badges.
-    public function awardBadges(int $userId): array
-    {
-        $u = $this->users->find($userId);
-        $earned = [];
-        $rules = [
-            'Level 5'       => (int) $u['level'] >= 5,
-            'Rich Explorer' => (int) $u['coins'] >= 500,
-            '10 Day Streak' => (int) $u['streak'] >= 10,
-        ];
-        foreach ($rules as $badge => $ok) {
-            if ($ok && $this->users->awardBadge($userId, $badge)) $earned[] = $badge;
-        }
-        return $earned;
-    }
-
     // Everything the UI shows about a player's progress.
     public function wallet(int $userId): array
     {
@@ -86,6 +70,7 @@ final class ProgressionService
             'xp_for_next'   => GameRules::xpForLevel($level + 1) - $levelStart,
             'streak'        => (int) $u['streak'],
             'inventory'     => $this->shop->inventory($userId),
+            'equipped'      => ['skin' => $u['equipped_skin'] ?? null, 'theme' => $u['equipped_theme'] ?? null],
         ];
     }
 }

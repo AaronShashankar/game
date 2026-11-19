@@ -36,10 +36,10 @@ $diffCopy = [
     <h2 class="section-title">Simple to pick up, rewarding to master</h2>
   </div>
   <div class="feature-grid">
-    <div class="card feature"><div class="icon-box"><?= icon('bulb') ?></div><h3>Questions at every gate</h3><p>Gates block the path to the exit. Answer correctly to walk through.</p></div>
-    <div class="card feature"><div class="icon-box"><?= icon('target') ?></div><h3>Fair scoring</h3><p>Full reward on the first try, half on the second, none after that.</p></div>
-    <div class="card feature"><div class="icon-box"><?= icon('flame') ?></div><h3>Daily streaks</h3><p>Check in every day to grow your streak and your bonus.</p></div>
-    <div class="card feature"><div class="icon-box"><?= icon('trophy') ?></div><h3>Leaderboards</h3><p>Climb the all-time and weekly rankings for XP, coins and streaks.</p></div>
+    <div class="card feature"><div class="icon-box"><?= icon('bulb') ?></div><h3>Learn at every gate</h3><p>Answer to open the gate. Miss it and you see the right answer and why.</p></div>
+    <div class="card feature"><div class="icon-box"><?= icon('target') ?></div><h3>Reviews that stick</h3><p>Questions you missed come back in later mazes until you know them.</p></div>
+    <div class="card feature"><div class="icon-box"><?= icon('flame') ?></div><h3>A new maze every day</h3><p>Everyone plays the same daily maze. Keep your streak going to grow your bonus.</p></div>
+    <div class="card feature"><div class="icon-box"><?= icon('trophy') ?></div><h3>Compete with friends</h3><p>Send a challenge link, climb the boards, and win coins in the weekly top 3.</p></div>
   </div>
 </section>
 

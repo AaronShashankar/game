@@ -15,13 +15,34 @@ final class GameRules
     // mult:        multiplier on the completion reward
     // min_seconds: fastest plausible completion; anything faster is rejected
     // fog:         fog-of-war radius in cells (display only), or null
+    // pickups:     optional coins placed in dead ends
     public const DIFFICULTIES = [
-        'Easy'   => ['size' => 10, 'time' => null, 'gates' => 3, 'penalty' => 0,  'mult' => 1.0, 'min_seconds' => 6,  'fog' => null],
-        'Medium' => ['size' => 15, 'time' => 150,  'gates' => 5, 'penalty' => 5,  'mult' => 1.5, 'min_seconds' => 10, 'fog' => null],
-        'Hard'   => ['size' => 20, 'time' => 240,  'gates' => 7, 'penalty' => 10, 'mult' => 2.0, 'min_seconds' => 15, 'fog' => 3.5],
+        'Easy'   => ['size' => 10, 'time' => null, 'gates' => 3, 'penalty' => 0,  'mult' => 1.0, 'min_seconds' => 6,  'fog' => null, 'pickups' => 3],
+        'Medium' => ['size' => 15, 'time' => 150,  'gates' => 5, 'penalty' => 5,  'mult' => 1.5, 'min_seconds' => 10, 'fog' => null, 'pickups' => 4],
+        'Hard'   => ['size' => 20, 'time' => 240,  'gates' => 7, 'penalty' => 10, 'mult' => 2.0, 'min_seconds' => 15, 'fog' => 3.5,  'pickups' => 5],
     ];
+    public const QUESTION_DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
     public const MIXED_SUBJECT = 'Mixed Mode';
+
+    // Pickups are recorded as you walk over them but only paid when the maze is
+    // finished, so starting and abandoning runs can't farm them.
+    public const PICKUP_COINS = 5;
+
+    // Daily maze: the same seed and question order for everyone, one ranked attempt.
+    public const DAILY_DIFFICULTY = 'Medium';
+    public const DAILY_BONUS_COINS = 50;
+    public const DAILY_BONUS_XP = 20;
+
+    // Spaced repetition: days until a question in box N is due again.
+    // A correct answer after the last (30-day) wait retires the question as mastered.
+    public const REVIEW_INTERVAL_DAYS = [1 => 1, 2 => 3, 3 => 7, 4 => 14, 5 => 30];
+    public const MAX_REVIEWS_PER_RUN = 2;
+
+    // Coins for last week's top 3 by XP.
+    public const WEEKLY_PRIZES = [1 => 300, 2 => 200, 3 => 100];
+
+    public const STREAK_FREEZE_MAX = 2;   // how many a player can hold
 
     public const GATE_COINS = 10;
     public const GATE_XP = 5;
@@ -88,5 +109,17 @@ final class GameRules
     public static function xpForLevel(int $level): int
     {
         return 50 * $level * ($level - 1);
+    }
+
+    // Days until a review question is due again after a correct answer in $box;
+    // null once it has passed the last box (mastered).
+    public static function reviewInterval(int $box): ?int
+    {
+        return self::REVIEW_INTERVAL_DAYS[$box] ?? null;
+    }
+
+    public static function pickupCoins(int $collected): int
+    {
+        return $collected * self::PICKUP_COINS;
     }
 }

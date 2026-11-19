@@ -16,12 +16,17 @@ final class ProfileService
         private UserRepository $users = new UserRepository(),
         private LedgerRepository $ledger = new LedgerRepository(),
         private ProgressionService $progression = new ProgressionService(),
+        private AchievementService $achievements = new AchievementService(),
+        private LearningService $learning = new LearningService(),
+        private WeeklyRewardService $weekly = new WeeklyRewardService(),
     ) {}
 
     public function me(int $userId): array
     {
         $u = $this->users->find($userId);
         if ($u === null) throw ApiError::unauthorized();
+        $this->weekly->settleLastWeek();   // pays last week's prizes on the first visit after the week ends
+        $u = $this->users->find($userId);
 
         // XP per day for the last 7 days (dashboard chart), oldest first.
         // Day keys come from the database clock so they match the ledger's dates.
@@ -32,6 +37,7 @@ final class ProfileService
             $day = $today->modify("-$i day")->format('Y-m-d');
             $chart[] = ['day' => $day, 'xp' => (int) ($byDay[$day] ?? 0)];
         }
+        $wallet = $this->progression->wallet($userId);
 
         return [
             'user' => [
@@ -44,14 +50,17 @@ final class ProfileService
                 'correct_answers' => (int) $u['correct_answers'],
                 'wrong_answers'   => (int) $u['wrong_answers'],
                 'powerups_used'   => (int) $u['powerups_used'],
-                'badges'          => $this->users->badges($userId),
             ],
-            'wallet' => $this->progression->wallet($userId),
+            'achievements' => $this->achievements->forUser($userId),
+            'learning' => $this->learning->summary($userId),
+            'weekly' => $this->weekly->lastWeek($userId),
+            'wallet' => $wallet,
             'xp_chart' => $chart,
             'daily' => [
                 'checked_in' => $u['last_checkin'] === $today->format('Y-m-d'),
                 'spins_left' => max(0, GameRules::SPINS_PER_DAY - $this->ledger->countToday($userId, 'spin')),
                 'spin_cost'  => GameRules::SPIN_COST,
+                'streak_freezes' => $wallet['inventory']['streakFreeze'] ?? 0,
             ],
         ];
     }

@@ -35,7 +35,7 @@ final class Router
                 throw ApiError::notFound();
             }
             [$handler, $guard] = $route;
-            if ($guard !== null) $this->guard($guard, $isApi);
+            if ($guard !== null) $this->guard($guard, $isApi, $request);
 
             $result = $handler($request);
             if ($isApi) $this->json(['success' => true] + ($result ?? []));
@@ -59,8 +59,9 @@ final class Router
         }
     }
 
-    // Guards: 'player' / 'admin'. API routes get 401, pages redirect to login.
-    private function guard(string $guard, bool $isApi): void
+    // Guards: 'player' / 'admin'. API routes get 401, pages redirect to login
+    // (players come back to the page they asked for via ?next=).
+    private function guard(string $guard, bool $isApi, Request $request): void
     {
         $ok = match ($guard) {
             'player' => Auth::playerId() !== null,
@@ -68,7 +69,9 @@ final class Router
         };
         if ($ok) return;
         if ($isApi) throw ApiError::unauthorized();
-        redirect($guard === 'admin' ? 'admin' : 'user');
+        if ($guard === 'admin') redirect('admin');
+        $query = $_SERVER['QUERY_STRING'] ?? '';
+        redirect('user?next=' . rawurlencode($request->path . ($query !== '' ? "?$query" : '')));
     }
 
     private function json(array $body, int $status = 200): void

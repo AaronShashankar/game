@@ -7,9 +7,11 @@ namespace App\Http\Controllers;
 use App\Http\Auth;
 use App\Http\Request;
 use App\Repositories\UserRepository;
+use App\Services\DailyService;
 use App\Services\ProfileService;
 use App\Services\RewardService;
 use App\Services\ShopService;
+use App\Services\WeeklyRewardService;
 
 // Profile, rewards, shop and leaderboard endpoints for players.
 final class PlayerController
@@ -18,6 +20,7 @@ final class PlayerController
         private ProfileService $profile = new ProfileService(),
         private RewardService $rewards = new RewardService(),
         private ShopService $shop = new ShopService(),
+        private DailyService $daily = new DailyService(),
     ) {}
 
     public function me(Request $r): array            { return $this->profile->me(Auth::playerId()); }
@@ -28,12 +31,25 @@ final class PlayerController
     public function spin(Request $r): array          { return $this->rewards->spin(Auth::playerId()); }
     public function shop(Request $r): array          { return $this->shop->catalogue(Auth::playerId()); }
     public function buy(Request $r): array           { return $this->shop->buy(Auth::playerId(), $r->required('item')); }
+    public function daily(Request $r): array         { return ['daily' => $this->daily->status(Auth::playerId())]; }
+
+    // item: code to equip, or empty to go back to the default look.
+    public function equip(Request $r): array
+    {
+        $code = $r->string('item');
+        return $this->shop->equip(Auth::playerId(), $r->required('kind'), $code === '' ? null : $code);
+    }
 
     // Public: used on the landing page too.
     public function leaderboard(Request $r): array
     {
         $type = $r->string('type', 'xp');
         $limit = max(1, min(100, $r->int('limit', 10)));
+        if ($type === 'daily') {
+            $day = $this->daily->today()['day'];
+            return ['type' => $type, 'day' => $day, 'leaderboard' => $this->daily->leaderboard($day, $limit)];
+        }
+        if ($type === 'weekly') (new WeeklyRewardService())->settleLastWeek();
         $users = new UserRepository();
         $rows = $type === 'weekly'
             ? $users->weeklyLeaderboard($limit)

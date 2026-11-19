@@ -70,6 +70,7 @@ $diffCopy = ['Easy' => 'Small maze, no timer', 'Medium' => 'Bigger maze, against
       <div class="grow">
         <div class="list-title">Daily bonus</div>
         <div class="list-meta" id="bonusMeta">Keep your streak going</div>
+        <div class="list-meta" id="freezeMeta" hidden></div>
       </div>
       <button class="btn btn-secondary btn-sm" id="bonusBtn" onclick="claimBonus()">Claim</button>
     </div>
@@ -85,6 +86,36 @@ $diffCopy = ['Easy' => 'Small maze, no timer', 'Medium' => 'Bigger maze, against
 </div>
 
 <div class="grid grid-3 mt-16">
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Today's maze</div><div class="card-sub"><?= e(GameRules::DAILY_DIFFICULTY) ?> · mixed subjects · one attempt</div></div>
+      <div class="icon-box"><?= icon('calendar') ?></div>
+    </div>
+    <div id="dailyBody"><div class="empty">Loading…</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Learning</div><div class="card-sub">Missed questions come back until you know them</div></div>
+      <div class="icon-box"><?= icon('book') ?></div>
+    </div>
+    <div class="row" style="align-items:baseline; gap:8px">
+      <span class="stat-value" style="margin:0" id="reviewsDue">—</span><span class="muted" style="font-size:14px" id="reviewsLabel">to revisit</span>
+    </div>
+    <div class="mastery mt-16" id="masteryPreview"></div>
+    <a class="btn btn-ghost btn-sm mt-16" href="<?= url('profile') ?>#mastery">All subjects<?= icon('arrow-right', 'icon-sm') ?></a>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Weekly prizes</div><div class="card-sub">Top 3 by XP each week win <?= implode(' / ', GameRules::WEEKLY_PRIZES) ?> coins</div></div>
+      <div class="icon-box"><?= icon('trophy') ?></div>
+    </div>
+    <div id="weeklyBody"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<div class="grid grid-3 mt-16">
   <div class="card span-2">
     <div class="card-head">
       <div>
@@ -95,8 +126,12 @@ $diffCopy = ['Easy' => 'Small maze, no timer', 'Medium' => 'Bigger maze, against
     <div class="chart-box"><canvas id="progressChart"></canvas></div>
   </div>
   <div class="card">
-    <div class="card-head"><div class="card-title">Achievements</div></div>
-    <div class="badge-list" id="badges"><span class="subtle" style="font-size:14px">—</span></div>
+    <div class="card-head">
+      <div><div class="card-title">Achievements</div><div class="card-sub" id="achCount">—</div></div>
+      <a class="btn btn-ghost btn-sm" href="<?= url('profile') ?>#achievements">View all</a>
+    </div>
+    <div class="progress"><span id="achFill"></span></div>
+    <div class="list mt-16" id="achRecent"></div>
   </div>
 </div>
 
@@ -105,6 +140,7 @@ $diffCopy = ['Easy' => 'Small maze, no timer', 'Medium' => 'Bigger maze, against
     <div class="card-title">Top players</div>
     <div class="tabs" role="tablist">
       <button class="tab lb-btn is-active" id="xpBtn" onclick="loadLeaderboard('xp')">XP</button>
+      <button class="tab lb-btn" id="weeklyBtn" onclick="loadLeaderboard('weekly')">This week</button>
       <button class="tab lb-btn" id="coinsBtn" onclick="loadLeaderboard('coins')">Coins</button>
       <button class="tab lb-btn" id="levelBtn" onclick="loadLeaderboard('level')">Level</button>
       <button class="tab lb-btn" id="streakBtn" onclick="loadLeaderboard('streak')">Streak</button>

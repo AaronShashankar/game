@@ -4,6 +4,7 @@ require __DIR__ . '/../layouts/document-start.php';
 $tabs = [
     'dashboard' => ['Overview',  'grid'],
     'users'     => ['Players',   'users'],
+    'questions' => ['Questions', 'book'],
     'analytics' => ['Analytics', 'chart'],
     'security'  => ['Security',  'shield'],
     'system'    => ['Data',      'server'],
@@ -62,6 +63,33 @@ $tabs = [
               <tbody id="usersTableBody"><tr><td colspan="11" class="empty"><div class="spinner"></div>Loading…</td></tr></tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- Questions -->
+      <section id="questions-tab" class="tab-content">
+        <div class="card card-flush">
+          <div class="toolbar">
+            <input class="input grow" type="search" id="qSearch" name="question-search" autocomplete="off" placeholder="Search question text" aria-label="Search questions">
+            <select class="input" id="qSubject" aria-label="Subject"><option value="">All subjects</option></select>
+            <select class="input" id="qDifficulty" aria-label="Difficulty">
+              <option value="">Any difficulty</option><option>Easy</option><option>Medium</option><option>Hard</option>
+            </select>
+            <select class="input" id="qStatus" aria-label="Status">
+              <option value="active">Active</option><option value="archived">Archived</option><option value="">All</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="openImportModal()"><?= icon('upload', 'icon-sm') ?>Import CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="openQuestionModal()"><?= icon('plus', 'icon-sm') ?>Add question</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>Question</th><th>Subject</th><th>Difficulty</th><th class="num">Answered</th><th class="num">Correct</th><th></th></tr>
+              </thead>
+              <tbody id="questionRows"><tr><td colspan="6" class="empty"><div class="spinner"></div>Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="toolbar" style="border-top:1px solid var(--border); border-bottom:0"><span class="subtle" style="font-size:13px" id="qCount"></span></div>
         </div>
       </section>
 
@@ -147,5 +175,58 @@ $tabs = [
   </div>
 </div>
 
+<!-- Question editor -->
+<div id="questionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="questionModalTitle">
+  <div class="modal-panel modal-wide">
+    <button class="btn btn-ghost btn-icon modal-close" onclick="closeQuestionModal()" aria-label="Close"><?= icon('x') ?></button>
+    <h2 class="modal-title" id="questionModalTitle">Add question</h2>
+    <p class="modal-sub">Players see the explanation after they answer.</p>
+    <form id="questionForm" class="form mt-24">
+      <input type="hidden" id="qId">
+      <div class="form-row">
+        <div class="field"><label for="qFormSubject">Subject</label><input class="input" id="qFormSubject" list="subjectList" required maxlength="100"><datalist id="subjectList"></datalist></div>
+        <div class="field"><label for="qFormDifficulty">Difficulty</label>
+          <select class="input" id="qFormDifficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
+      </div>
+      <div class="field"><label for="qFormPrompt">Question</label><textarea class="input" id="qFormPrompt" required maxlength="500" rows="2"></textarea></div>
+      <div class="field">
+        <label>Answers <span class="form-hint">(2–4; select the correct one)</span></label>
+        <div class="option-inputs">
+          <?php for ($i = 0; $i < 4; $i++): ?>
+            <label class="option-input"><input type="radio" name="qCorrect" value="<?= $i ?>"<?= $i === 0 ? ' checked' : '' ?> aria-label="Option <?= $i + 1 ?> is correct">
+              <input class="input" id="qOpt<?= $i ?>" maxlength="200" placeholder="Option <?= $i + 1 ?><?= $i >= 2 ? ' (optional)' : '' ?>"></label>
+          <?php endfor; ?>
+        </div>
+      </div>
+      <div class="field"><label for="qFormExplanation">Explanation</label><textarea class="input" id="qFormExplanation" maxlength="500" rows="2" placeholder="Why the answer is right, in a sentence or two"></textarea></div>
+      <label class="row" style="gap:8px; font-size:14px"><input type="checkbox" id="qFormActive" checked> Active (can be asked in games)</label>
+      <div class="form-actions mt-8">
+        <button type="button" class="btn btn-ghost" onclick="closeQuestionModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save question</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CSV import -->
+<div id="importModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+  <div class="modal-panel modal-wide">
+    <button class="btn btn-ghost btn-icon modal-close" onclick="closeImportModal()" aria-label="Close"><?= icon('x') ?></button>
+    <h2 class="modal-title" id="importTitle">Import questions</h2>
+    <p class="modal-sub">One question per row. Columns: <code><?= e(implode(',', App\Services\QuestionService::CSV_COLUMNS)) ?></code>.
+      <code>answer</code> is the number of the correct option (1–4); option3 and option4 can be empty.
+      Every row is checked first: if any row has a problem, nothing is imported. Questions already in the bank are skipped.</p>
+    <div class="form mt-24">
+      <div class="field"><label for="csvFile">CSV file</label><input class="input" type="file" id="csvFile" accept=".csv,text/csv" style="padding-top:8px"></div>
+      <div class="import-errors" id="importErrors" hidden></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="downloadTemplate()"><?= icon('download', 'icon-sm') ?>Template</button>
+        <button type="button" class="btn btn-primary" id="importBtn" onclick="importCsv()">Import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>window.CsvColumns = <?= json_encode(App\Services\QuestionService::CSV_COLUMNS) ?>;</script>
 <?= page_script('admin-panel') ?>
 <?php require __DIR__ . '/../layouts/document-end.php'; ?>
