@@ -1,12 +1,10 @@
 <?php
-session_start();
+require_once __DIR__ . '/../Utils/helpers.php';
+startSessionOnce();
 header('Content-Type: application/json');
 
 // लगइन जाँच गर्नुहोस्
-if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-    echo json_encode(["success" => false, "message" => "User not logged in."]);
-    exit;
-}
+requirePlayerApi();
 
 require_once __DIR__ . '/../Config/database.php';
 $database = new Database();

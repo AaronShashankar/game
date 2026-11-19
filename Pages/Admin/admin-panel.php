@@ -688,7 +688,7 @@
             
             // Also check server session
             try {
-                const res = await fetch('<?= url(''/api/'') ?>'user_profile.php', { credentials: 'same-origin' });
+                const res = await fetch('<?= url('api/') ?>user_profile.php', { credentials: 'same-origin' });
                 const data = await res.json();
                 if (data.success && data.user) {
                     // Use server data if available
@@ -764,7 +764,7 @@
 
             try {
                 // Load stats from SQL
-                const statsResponse = await fetch('<?= url(''/api/'') ?>'admin_api.php?action=get_stats');
+                const statsResponse = await fetch('<?= url('api/') ?>admin_api.php?action=get_stats');
                 const stats = await statsResponse.json();
                 
                 // Update statistics
@@ -792,7 +792,7 @@
             const activityContainer = document.getElementById('recentActivity');
             
             try {
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php?action=get_activity');
+                const response = await fetch('<?= url('api/') ?>admin_api.php?action=get_activity');
                 const activities = await response.json();
                 
                 activityContainer.innerHTML = '';
@@ -825,7 +825,7 @@
             tableBody.innerHTML = '<tr><td colspan="7" class="loading"><div class="spinner"></div><p>Loading users...</p></td></tr>';
 
             try {
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php?action=get_users');
+                const response = await fetch('<?= url('api/') ?>admin_api.php?action=get_users');
                 const users = await response.json();
                 
                 tableBody.innerHTML = '';
@@ -881,7 +881,7 @@
             container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading security logs...</p></div>';
 
             try {
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php?action=get_security_logs');
+                const response = await fetch('<?= url('api/') ?>admin_api.php?action=get_security_logs');
                 const securityLogs = await response.json();
                 
                 container.innerHTML = '';
@@ -918,7 +918,7 @@
         // ✅ Load analytics
         async function loadAnalytics() {
             try {
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php?action=get_analytics');
+                const response = await fetch('<?= url('api/') ?>admin_api.php?action=get_analytics');
                 const analytics = await response.json();
                 
                 // Update analytics fields
@@ -953,7 +953,7 @@
             formData.append('level', document.getElementById('initialLevel').value);
 
             try {
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php', {
+                const response = await fetch('<?= url('api/') ?>admin_api.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -1021,7 +1021,7 @@
                 formData.append('current_password', currentPassword);
                 formData.append('new_password', newPassword);
 
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php', {
+                const response = await fetch('<?= url('api/') ?>admin_api.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -1059,7 +1059,7 @@
                     formData.append('action', 'delete_user');
                     formData.append('user_id', userId);
 
-                    const response = await fetch('<?= url(''/api/'') ?>'admin_api.php', {
+                    const response = await fetch('<?= url('api/') ?>admin_api.php', {
                         method: 'POST',
                         body: formData
                     });
@@ -1099,7 +1099,7 @@
 
         async function backupData() {
             try {
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php?action=backup_data');
+                const response = await fetch('<?= url('api/') ?>admin_api.php?action=backup_data');
                 const result = await response.json();
                 
                 if (result.success) {
@@ -1119,7 +1119,7 @@
                     const formData = new FormData();
                     formData.append('action', 'reset_all_data');
 
-                    const response = await fetch('<?= url(''/api/'') ?>'admin_api.php', {
+                    const response = await fetch('<?= url('api/') ?>admin_api.php', {
                         method: 'POST',
                         body: formData
                     });
@@ -1145,7 +1145,7 @@
                     const formData = new FormData();
                     formData.append('action', 'delete_all_users');
 
-                    const response = await fetch('<?= url(''/api/'') ?>'admin_api.php', {
+                    const response = await fetch('<?= url('api/') ?>admin_api.php', {
                         method: 'POST',
                         body: formData
                     });
@@ -1168,7 +1168,7 @@
 
         async function exportData() {
             try {
-                const response = await fetch('<?= url(''/api/'') ?>'admin_api.php?action=export_data');
+                const response = await fetch('<?= url('api/') ?>admin_api.php?action=export_data');
                 const result = await response.json();
                 
                 if (result.success) {

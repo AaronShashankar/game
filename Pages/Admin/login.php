@@ -49,7 +49,7 @@
         const formData = new FormData(e.target);
 
         try {
-            const response = await fetch('<?= url(''/api/'') ?>'admin_login.php', {
+            const response = await fetch('<?= url('api/') ?>admin_login.php', {
                 method: 'POST',
                 body: formData
             });

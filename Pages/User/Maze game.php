@@ -10,7 +10,7 @@
 <header class="navbar">
   <div class="logo">🎮 MazeQuest</div>
   <nav class="navlinks">
-    <a href="<?= url('index#features') ?>">Features</a>
+    <a href="<?= url('#features') ?>">Features</a>
     <a href="<?= url('howtoplay') ?>">How to Play</a>
     <a href="<?= url('leaderboard') ?>" class="active">Leaderboard</a>
   </nav>
@@ -77,7 +77,7 @@
     <div class="col">
       <h4>Quick Links</h4>
       <ul>
-        <li><a href="<?= url('index#features') ?>">Features</a></li>
+        <li><a href="<?= url('#features') ?>">Features</a></li>
         <li><a href="<?= url('howtoplay') ?>">How To Play</a></li>
         <li><a href="<?= url('game') ?>">Play</a></li>
       </ul>

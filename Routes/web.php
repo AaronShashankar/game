@@ -17,6 +17,17 @@ $routes = [
     '/admin-panel' => 'Pages/Admin/admin-panel.php'
 ];
 
+// Pages that need a logged-in player / admin. Checked on the server so the
+// page HTML is never sent to someone who isn't allowed to see it.
+$playerOnly = ['/dashboard', '/game', '/profile', '/shop', '/choose-subject'];
+$adminOnly  = ['/admin-panel'];
+
+if (in_array($requestUri, $playerOnly, true)) {
+    requirePlayerPage();
+} elseif (in_array($requestUri, $adminOnly, true)) {
+    requireAdminPage();
+}
+
 if (array_key_exists($requestUri, $routes)) {
     $file = __DIR__ . '/../' . $routes[$requestUri];
     if (file_exists($file)) {

@@ -4,10 +4,10 @@ require_once __DIR__ . '/../Config/database.php';
 header('Content-Type: application/json');
 // Enable error reporting for debugging
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 
 $type = $_GET['type'] ?? 'xp'; // xp, coins, level, streak
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+$limit = max(1, min(100, (int)($_GET['limit'] ?? 10)));
 
 try {
     $database = new Database();

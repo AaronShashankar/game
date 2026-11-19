@@ -1,10 +1,19 @@
 RewriteEngine On
 RewriteBase /game/
 
-# Exclude assets from being rewritten to index.php
+# Static assets are served directly.
 RewriteRule ^assets/ - [L]
 
-# Route everything else to index.php
+# Never serve internals, setup/migration scripts, tests or docs over HTTP.
+RewriteRule ^(Config|Services|Utils|Routes|Components|Pages|database)(/|$) - [F,L]
+RewriteRule ^test_[^/]*\.php$ - [F,L]
+RewriteRule \.(md|sql)$ - [F,L]
+
+# All API calls go through the front controller (so sessions, helpers and
+# auth guards are always loaded), even though the files exist on disk.
+RewriteRule ^api/ index.php [L,QSA]
+
+# Everything else that isn't a real file/dir goes to the front controller.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [L,QSA]

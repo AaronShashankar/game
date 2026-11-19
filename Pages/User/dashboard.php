@@ -1025,7 +1025,7 @@
     
     async function checkBackend() {
       try {
-        const res = await fetch('<?= url(''/api/'') ?>'user_profile.php', { 
+        const res = await fetch('<?= url('api/') ?>user_profile.php', { 
           method: 'GET', 
           credentials: 'same-origin',
           signal: AbortSignal.timeout(2000) // 2 second timeout
@@ -1056,7 +1056,7 @@
         form.append('avatar', user.avatar || '');
         form.append('last_checkin', user.lastCheckin || '');
         
-        const res = await fetch('<?= url(''/api/'') ?>'sync_profile.php', { 
+        const res = await fetch('<?= url('api/') ?>sync_profile.php', { 
           method: 'POST', 
           body: form, 
           credentials: 'same-origin',
@@ -1109,7 +1109,7 @@
       showPopup("👋 Logging out...");
       // Call logout API to destroy session
       try {
-        await fetch('<?= url(''/api/'') ?>'logout.php', { credentials: 'same-origin' });
+        await fetch('<?= url('api/') ?>logout.php', { credentials: 'same-origin' });
       } catch(e) {}
       setTimeout(() => {
         window.location.href = "user";
@@ -1124,7 +1124,7 @@
       }
       
       try {
-        const res = await fetch('<?= url(''/api/'') ?>'user_profile.php', { 
+        const res = await fetch('<?= url('api/') ?>user_profile.php', { 
           credentials: 'same-origin',
           signal: AbortSignal.timeout(5000)
         });

@@ -58,9 +58,9 @@ require_once __DIR__ . '/../Components/header.php';
   </section>
 
   <section id="leader" class="leader">
-    <h2>Top Players (Local)</h2>
-    <ol id="leader-list-landing"></ol>
+    <h2>Top Players</h2>
+    <ol id="leader-list-landing" data-api="<?= url('api/leaderboard.php?limit=5') ?>"></ol>
   </section>
 
-<script src="<?= url('assets/landing.js') ?>"></script>
+<script src="<?= asset('js/landing.js') ?>"></script>
 <?php require_once __DIR__ . '/../Components/footer.php'; ?>

@@ -40,6 +40,10 @@ class AuthService {
 
     private function createSession($user, $role) {
         if(session_status() !== PHP_SESSION_ACTIVE) session_start();
+        // New session ID on login prevents session fixation, and clears any
+        // leftover keys from a previous login (e.g. player -> admin).
+        session_regenerate_id(true);
+        $_SESSION = [];
         $_SESSION['loggedin'] = true;
         $_SESSION['user_id'] = (int)$user['id'];
         $_SESSION['username'] = $user['username'];

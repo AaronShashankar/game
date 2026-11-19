@@ -29,6 +29,9 @@ canvas {
     margin-top: 10px;
     flex-wrap: wrap;
 }
+#timer.low-time { color: #ff6b6b; animation: pulse 0.8s infinite alternate; }
+#timer.frozen { background: #2a6f97; box-shadow: 0 0 15px rgba(135, 206, 235, 0.8); }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
 #hud div {
     background: #1c375c;
     color: #fff;
@@ -372,7 +375,7 @@ canvas {
     <div class="shop-grid">
         <div class="shop-item">
             <h3>⏱️ Time Freeze</h3>
-            <p>Freeze time for 5 seconds</p>
+            <p>Freeze the timer for 10 seconds</p>
             <p>Price: 25 coins</p>
             <p>You have: <span id="shopTimeFreezeCount">0</span></p>
             <button onclick="buyPowerUp('timeFreeze', 25)">Buy</button>
@@ -460,7 +463,7 @@ let _accumScore = 0;   // coins earned during this session for leaderboard
 
 async function checkBackend() {
     try {
-        const res = await fetch('<?= url(''/api/'') ?>'sync_profile.php', { 
+        const res = await fetch('<?= url('api/') ?>sync_profile.php', { 
             method: 'POST',
             body: new FormData(),
             credentials: 'same-origin',
@@ -475,12 +478,13 @@ async function checkBackend() {
 }
 
 async function startServerSession() {
+    await backendReady;   // the game can auto-start before the backend check finishes
     if (!backendAvailable) return;
     try {
         const form = new FormData();
         // If you have a specific maze_id from backend, pass it here. Default to 1.
         form.append('maze_id', 1);
-        const res = await fetch('<?= url(''/api/'') ?>'game_session_api.php?action=start_session', { 
+        const res = await fetch('<?= url('api/') ?>game_session_api.php?action=start_session', { 
             method: 'POST', 
             body: form, 
             credentials: 'same-origin',
@@ -497,7 +501,7 @@ async function endServerSession() {
         const form = new FormData();
         form.append('session_id', _sessionId);
         form.append('score_earned', Math.max(0, Math.floor(_accumScore)));
-        await fetch('<?= url(''/api/'') ?>'game_session_api.php?action=end_session', { 
+        await fetch('<?= url('api/') ?>game_session_api.php?action=end_session', { 
             method: 'POST', 
             body: form, 
             credentials: 'same-origin',
@@ -521,16 +525,15 @@ async function syncProfileNow() {
         form.append('coins', user.coins || 0);
         form.append('level', user.level || 1);
         form.append('xp', user.xp || 0);
-        form.append('streak', user.streak || 0);
+        // streak / last_checkin are owned by the daily check-in API, not the game.
         form.append('avatar', user.avatar || '');
-        form.append('last_checkin', user.lastCheckin || '');
         // Aggregate totals
         form.append('total_games', user.total_games || 0);
         form.append('correct_answers', user.correct_answers || 0);
         form.append('wrong_answers', user.wrong_answers || 0);
         form.append('powerups_used', user.powerups_used || 0);
         
-        const res = await fetch('<?= url(''/api/'') ?>'sync_profile.php', { 
+        const res = await fetch('<?= url('api/') ?>sync_profile.php', { 
             method: 'POST', 
             body: form, 
             credentials: 'same-origin',
@@ -567,7 +570,7 @@ async function loadUserFromDB() {
     }
     
     try {
-        const res = await fetch('<?= url(''/api/'') ?>'user_profile.php', { 
+        const res = await fetch('<?= url('api/') ?>user_profile.php', { 
             credentials: 'same-origin',
             signal: AbortSignal.timeout(5000)
         });
@@ -596,7 +599,7 @@ async function loadUserFromDB() {
 }
 
 // Initialize backend check and load user data
-(async function() {
+const backendReady = (async function() {
     await checkBackend();
     if (backendAvailable) {
         console.log('🌐 Backend available - loading user data from database');
@@ -610,8 +613,21 @@ async function loadUserFromDB() {
 let selectedSubject = '';
 let selectedDifficulty = 'Easy';
 let scoreDoublerActive = false;
-const TIME_BY_DIFF = { 'Easy': 60, 'Medium': 120, 'Hard': 180 };
-let countdown = TIME_BY_DIFF[selectedDifficulty];
+
+// ===== Difficulty rules (match what the landing page promises) =====
+//   Easy:   small maze, no timer
+//   Medium: bigger maze, timer, wrong answers cost coins
+//   Hard:   large maze, timer, fog of war, bigger penalties
+// `gates` = number of question gates placed ON the path to the exit,
+// so every one of them has to be answered (or skipped) to finish.
+const DIFFICULTY = {
+    Easy:   { size: 10, time: null, gates: 3, fog: null, wrongPenalty: 0,  rewardMult: 1   },
+    Medium: { size: 15, time: 150,  gates: 5, fog: null, wrongPenalty: 5,  rewardMult: 1.5 },
+    Hard:   { size: 20, time: 240,  gates: 7, fog: 3.5,  wrongPenalty: 10, rewardMult: 2   },
+};
+function diffCfg() { return DIFFICULTY[selectedDifficulty] || DIFFICULTY.Easy; }
+
+let countdown = diffCfg().time;
 const canvas = document.getElementById('mazeCanvas');
 const ctx = canvas.getContext('2d');
 let rows = 10, cols = 10;
@@ -619,13 +635,15 @@ let cellSize = canvas.width/cols;
 let maze=[],player={x:0,y:0},gates=[],wrongAttempts=0,isTimeFrozen=false;
 let start={x:0,y:0},end={x:rows-1,y:cols-1};
 let sparkles=[];
+let levelComplete = false;   // stops movement/timer and prevents re-claiming the exit reward
+let answerCombo = 0;         // consecutive correct answers this session (in-game only)
+let drawLoopStarted = false;
 
 // ===== Admin-configured Maze View Settings =====
 let mazeViewSettings = {};
 try { mazeViewSettings = JSON.parse(localStorage.getItem('mazeViewSettings') || '{}'); } catch(e) { mazeViewSettings = {}; }
 const WALL_COLOR = mazeViewSettings.wallColor || '#5bc0be';
 const LINE_WIDTH = (typeof mazeViewSettings.lineWidth === 'number' ? mazeViewSettings.lineWidth : 4);
-const GATE_DENSITY = (typeof mazeViewSettings.gateDensity === 'number' ? mazeViewSettings.gateDensity : 0.07);
 
 // ===== Question Banks =====
 const questionBanks = {
@@ -809,8 +827,11 @@ const questionBanks = {
             answer: "Hard-working"
         }
     ],
-    "Mixed Mode": []
+    "Mixed Mode": []   // filled from every other subject below
 };
+questionBanks["Mixed Mode"] = Object.entries(questionBanks)
+    .filter(([name]) => name !== "Mixed Mode")
+    .flatMap(([, qs]) => qs);
 
 // Create Mixed Mode by combining all subjects
 for (const subject of ["Mathematics", "Science", "General Knowledge", "History", "English Vocabulary"]) {
@@ -845,7 +866,6 @@ function startGameWithSubject() {
     
     // Apply difficulty settings before initializing
     applyDifficulty(selectedDifficulty);
-    countdown = TIME_BY_DIFF[selectedDifficulty] || 60;
 
     // Initialize the game with selected subject
     initGame();
@@ -855,23 +875,50 @@ function startGameWithSubject() {
 
 // ===== Game Functions =====
 function applyDifficulty(diff) {
-    if (diff === 'Easy') { rows = 10; cols = 10; }
-    else if (diff === 'Medium') { rows = 15; cols = 15; }
-    else if (diff === 'Hard') { rows = 20; cols = 20; }
+    const cfg = DIFFICULTY[diff] || DIFFICULTY.Easy;
+    rows = cfg.size; cols = cfg.size;
     cellSize = canvas.width / cols;
     start = {x:0, y:0};
     end = {x:rows-1, y:cols-1};
-    // Set timer per difficulty
-    countdown = TIME_BY_DIFF[diff] || 60;
+    resetTimer();
+}
+
+function resetTimer() {
+    countdown = diffCfg().time;   // null = no timer
+    renderTimer();
+}
+
+function renderTimer() {
+    const el = document.getElementById('timeLeft');
+    if (!el) return;
+    el.innerText = countdown === null ? '∞' : countdown;
+    const box = document.getElementById('timer');
+    if (box) box.classList.toggle('low-time', countdown !== null && countdown <= 10);
 }
 
 // (Difficulty UI removed) Difficulty will be provided by dashboard via URL param
+
+// Draw questions without repeats until the subject's bank is exhausted.
+const usedQuestions = {};
 function getRandomQuestion(subject) {
-    if (!questionBanks[subject] || questionBanks[subject].length === 0) {
-        return null;
+    const bank = questionBanks[subject];
+    if (!bank || bank.length === 0) return null;
+    if (!usedQuestions[subject] || usedQuestions[subject].size >= bank.length) {
+        usedQuestions[subject] = new Set();
     }
-    const randomIndex = Math.floor(Math.random() * questionBanks[subject].length);
-    return questionBanks[subject][randomIndex];
+    const remaining = bank.filter((_, i) => !usedQuestions[subject].has(i));
+    const pick = remaining[Math.floor(Math.random() * remaining.length)];
+    usedQuestions[subject].add(bank.indexOf(pick));
+    return pick;
+}
+
+function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
 }
 
 function checkAnswer(question, selectedAnswer) {
@@ -962,24 +1009,59 @@ function drawMaze(){
     else ctx.fillStyle="lime";
     ctx.arc(playerX,playerY,cellSize/4,0,Math.PI*2); ctx.fill();
 
+    // Fog of war (Hard): darken everything outside a soft circle around the player.
+    const fog = diffCfg().fog;
+    if (fog && !levelComplete) {
+        const r = fog * cellSize;
+        const g = ctx.createRadialGradient(playerX, playerY, r * 0.35, playerX, playerY, r);
+        g.addColorStop(0, 'rgba(5,8,12,0)');
+        g.addColorStop(1, 'rgba(5,8,12,0.97)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Hint is drawn above the fog so it's useful on Hard.
     if(hintGate){ctx.strokeStyle="yellow";ctx.lineWidth=4;ctx.strokeRect(hintGate.y*cellSize+cellSize/4,hintGate.x*cellSize+cellSize/4,cellSize/2,cellSize/2);}
     requestAnimationFrame(drawMaze);
 }
 
 // ===== Generate Gates =====
+// Shortest path start -> end through the carved maze (BFS). The maze is a
+// perfect maze, so this is the only path.
+function solutionPath(){
+    const key=(x,y)=>x*cols+y;
+    const prev=new Map([[key(start.x,start.y),null]]);
+    const queue=[start];
+    while(queue.length){
+        const {x,y}=queue.shift();
+        if(x===end.x&&y===end.y) break;
+        const c=maze[x][y];
+        const steps=[[!c.top,x-1,y],[!c.bottom,x+1,y],[!c.left,x,y-1],[!c.right,x,y+1]];
+        for(const [open,nx,ny] of steps){
+            if(open&&nx>=0&&nx<rows&&ny>=0&&ny<cols&&!prev.has(key(nx,ny))){
+                prev.set(key(nx,ny),{x,y});
+                queue.push({x:nx,y:ny});
+            }
+        }
+    }
+    const path=[];
+    for(let p={...end};p;p=prev.get(key(p.x,p.y))) path.unshift(p);
+    return path;
+}
+
+// Gates sit on the path to the exit, evenly spaced, so each one is a real
+// checkpoint the player has to clear (previously they were random and could
+// all be walked around).
 function generateGates(){
     gates=[];
-    
-    for(let i=1;i<rows-1;i++){for(let j=1;j<cols-1;j++){
-        if(Math.random()<GATE_DENSITY && !(i===start.x&&j===start.y) && !(i===end.x&&j===end.y)){
-            gates.push({
-                x:i,
-                y:j,
-                subject: selectedSubject, // Use the selected subject
-                opened:false
-            });
-        }
-    }}
+    const path=solutionPath();
+    const inner=path.slice(2,-2);           // keep start/exit and their neighbours clear
+    const count=Math.min(diffCfg().gates, inner.length);
+    for(let k=1;k<=count;k++){
+        const cell=inner[Math.floor(k*inner.length/(count+1))];
+        if(gates.some(g=>g.x===cell.x&&g.y===cell.y)) continue;
+        gates.push({x:cell.x, y:cell.y, subject:selectedSubject, opened:false});
+    }
 }
 
 // ===== Question Popup =====
@@ -993,7 +1075,8 @@ const shopPopup=document.getElementById('shopPopup');
 // Utility: close any open popups and return focus to the canvas
 function closeAllPopups() {
     popup.classList.remove('show');
-    levelPopup.classList.remove('show');
+    // The level-complete popup holds the only way forward (Next/Restart), so Esc leaves it open.
+    if (!levelComplete) levelPopup.classList.remove('show');
     correctAnswerPopup.classList.remove('show');
     shopPopup.classList.remove('show');
     try { document.getElementById('mazeCanvas').focus(); } catch(e) {}
@@ -1007,21 +1090,19 @@ document.addEventListener('keydown', (e) => {
 });
 
 function showQuestion(gate){
-    console.log("Gate subject:", gate.subject);
-    
     // Get questions from the selected subject
     const question = getRandomQuestion(gate.subject);
-    
+
     if (!question) {
-        alert("No questions available for " + gate.subject + ". Gate opened automatically.");
+        showPopup("No questions for " + gate.subject + " — gate opened.");
         gate.opened = true;
         return;
     }
-    
+
     qText.innerText = `Subject: ${gate.subject}\n${question.q}`;
     optionsDiv.innerHTML = '';
-    
-    for(const opt of question.options){
+
+    for(const opt of shuffled(question.options)){
         const btn = document.createElement('button');
         btn.innerText = opt;
         btn.onclick = () => {
@@ -1033,8 +1114,12 @@ function showQuestion(gate){
             setTimeout(() => { optionsDiv.innerHTML = ''; }, 0);
             if(checkAnswer(question, opt)){
                 gate.opened = true;
-                
-                let coinGain = 10, xpGain = 5;
+                wrongAttempts = 0;
+                answerCombo++;
+
+                // Combo bonus: +2 coins per consecutive correct answer, capped at +10.
+                const comboBonus = Math.min(answerCombo - 1, 5) * 2;
+                let coinGain = 10 + comboBonus, xpGain = 5;
                 if(scoreDoublerActive){
                     coinGain *= 2;
                     xpGain *= 2;
@@ -1044,7 +1129,7 @@ function showQuestion(gate){
                 
                 // Show correct answer popup
                 const rewardText = correctAnswerPopup.querySelector('.reward-amount');
-                rewardText.textContent = `+${coinGain}`;
+                rewardText.textContent = answerCombo > 1 ? `+${coinGain} (🔥 x${answerCombo} combo)` : `+${coinGain}`;
                 correctAnswerPopup.classList.add('show');
                 // Auto-hide the correct popup after a short delay
                 setTimeout(() => { correctAnswerPopup.classList.remove('show'); }, 1200);
@@ -1054,7 +1139,6 @@ function showQuestion(gate){
                 user.coins += coinGain;
                 user.xp += xpGain;
                 _accumScore += coinGain; // track toward leaderboard/session
-                user.streak++;
                 user.correct_answers += 1;
                 
                 // Check for level up
@@ -1068,12 +1152,19 @@ function showQuestion(gate){
                 syncProfileNow();
             } else {
                 wrongAttempts++;
+                answerCombo = 0;
+                const penalty = Math.min(diffCfg().wrongPenalty, user.coins);
+                if (penalty > 0) {
+                    user.coins -= penalty;
+                    animateReward('coins', -penalty);
+                }
+                const penaltyText = penalty > 0 ? ` (−${penalty} coins)` : '';
                 if(wrongAttempts >= 3){
                     player = {...start};
                     wrongAttempts = 0;
-                    alert("⚠️ 3 wrong attempts! Restarted.");
+                    showPopup(`⚠️ 3 wrong answers — back to the start!${penaltyText}`);
                 } else {
-                    alert("❌ Wrong answer! Try again.");
+                    showPopup(`❌ Wrong answer! ${3 - wrongAttempts} tries left.${penaltyText}`);
                 }
                 user.wrong_answers += 1;
                 saveUser();
@@ -1123,46 +1214,89 @@ function animateReward(type, value){
     fly.className='coinXP';
     fly.innerText=`+${value}`;
     el.appendChild(fly);
-    setTimeout(()=>{el.removeChild(fly);},1000);
+    setTimeout(()=>fly.remove(),1000);
 }
 
-// ===== Check Gates =====
-function checkGate(){
-    if(isTimeFrozen) return;
-    for(const g of gates){
-        if(g.x===player.x&&g.y===player.y&&!g.opened){
-            showQuestion(g);
-            return;
-        }
+// ===== Level Complete =====
+function completeLevel(){
+    if (levelComplete) return;           // reward can only be claimed once per maze
+    levelComplete = true;
+    const cfg = diffCfg();
+    const timeBonus = countdown === null ? 0 : Math.floor(countdown / 5);
+    const coinGain = Math.round(50 * cfg.rewardMult) + timeBonus;
+    const xpGain = Math.round(20 * cfg.rewardMult);
+
+    const msg = levelPopup.querySelector('p');
+    if (msg) {
+        msg.textContent = `+${coinGain} coins, +${xpGain} XP` +
+            (timeBonus ? ` (includes +${timeBonus} time bonus)` : '');
     }
-    if(player.x===end.x && player.y===end.y){
-        levelPopup.classList.add("show");
-        animateReward('coins', 50);
-        animateReward('xp', 20);
-        user.coins+=50; 
-        user.xp+=20; 
-        _accumScore += 50; // count level completion coins toward session score
-        checkLevelUp();
-        checkAchievements();
-        saveUser(); 
-        updateHUD();
-        scheduleSync();
-        // Immediate sync after level complete
-        syncProfileNow();
-    }
+    levelPopup.classList.add("show");
+    animateReward('coins', coinGain);
+    animateReward('xp', xpGain);
+    user.coins += coinGain;
+    user.xp += xpGain;
+    _accumScore += coinGain; // count level completion coins toward session score
+    checkLevelUp();
+    checkAchievements();
+    updateHUD();
+    // Immediate sync after level complete
+    syncProfileNow();
 }
 
 // ===== Movement =====
-document.addEventListener('keydown',e=>{
-    if(isTimeFrozen) return;
-    const c=maze[player.x][player.y];
-    let moved=false;
-    if(e.key==='ArrowUp'&&!c.top&&player.x>0){player.x--;moved=true;}
-    if(e.key==='ArrowDown'&&!c.bottom&&player.x<rows-1){player.x++;moved=true;}
-    if(e.key==='ArrowLeft'&&!c.left&&player.y>0){player.y--;moved=true;}
-    if(e.key==='ArrowRight'&&!c.right&&player.y<cols-1){player.y++;moved=true;}
-    if(moved) checkGate();
+// Popups that should pause player input while open.
+function inputBlocked(){
+    return levelComplete || !maze.length ||
+        [popup, levelPopup, shopPopup].some(p => p.classList.contains('show'));
+}
+
+// dx/dy are row/column deltas. An unopened gate blocks the cell: walking into
+// it asks the question and the player stays put until it's answered.
+function tryMove(dx, dy){
+    if (inputBlocked()) return;
+    const c = maze[player.x][player.y];
+    if ((dx === -1 && c.top) || (dx === 1 && c.bottom) ||
+        (dy === -1 && c.left) || (dy === 1 && c.right)) return;
+    const nx = player.x + dx, ny = player.y + dy;
+    if (nx < 0 || nx >= rows || ny < 0 || ny >= cols) return;
+
+    const gate = gates.find(g => g.x === nx && g.y === ny && !g.opened);
+    if (gate) { showQuestion(gate); return; }
+
+    player = {x: nx, y: ny};
+    if (player.x === end.x && player.y === end.y) completeLevel();
+}
+
+const KEY_DIRS = {
+    ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1],
+    w: [-1, 0], s: [1, 0], a: [0, -1], d: [0, 1],
+    W: [-1, 0], S: [1, 0], A: [0, -1], D: [0, 1],
+};
+document.addEventListener('keydown', e => {
+    const dir = KEY_DIRS[e.key];
+    if (!dir || !maze.length) return;   // not playing yet (subject screen)
+    // Don't hijack typing in inputs.
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    e.preventDefault();               // stop arrow keys scrolling the page
+    tryMove(dir[0], dir[1]);
 });
+
+// Touch: swipe on the canvas to move one cell.
+(function enableSwipe(){
+    let sx = 0, sy = 0;
+    canvas.style.touchAction = 'none';
+    canvas.addEventListener('touchstart', e => {
+        const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+    }, {passive: true});
+    canvas.addEventListener('touchend', e => {
+        const t = e.changedTouches[0];
+        const ddx = t.clientX - sx, ddy = t.clientY - sy;
+        if (Math.max(Math.abs(ddx), Math.abs(ddy)) < 20) return;
+        if (Math.abs(ddx) > Math.abs(ddy)) tryMove(0, ddx > 0 ? 1 : -1);
+        else tryMove(ddy > 0 ? 1 : -1, 0);
+    }, {passive: true});
+})();
 
 // ===== Save & HUD =====
 function saveUser(){
@@ -1200,21 +1334,28 @@ function flashHUD(){const hud=document.querySelectorAll('#hud div');hud.forEach(
 // ===== Power-Ups =====
 function usePower(type){
     if(!user.powerUps[type] || user.powerUps[type] <= 0){
-        alert("No " + type + " power-ups left! Visit the shop to buy more.");
+        showPopup("No " + type + " power-ups left — visit the shop!");
         showShop();
         return;
     }
-    
+    if(type==='timeFreeze' && (countdown === null || isTimeFrozen)){
+        showPopup(countdown === null ? "⏱ No timer on Easy — saved your Time Freeze." : "⏱ Time is already frozen!");
+        return;
+    }
+
     user.powerUps[type]--;
     user.powerups_used += 1;
-    
+
     if(type==='timeFreeze'){
+        // Freezes the countdown only — the player can keep moving.
         isTimeFrozen=true;
-        alert("⏱ Time Freeze active for 5 seconds!");
+        document.getElementById('timer')?.classList.add('frozen');
+        showPopup("⏱ Timer frozen for 10 seconds!");
         setTimeout(()=>{
             isTimeFrozen=false;
-            alert("Time Freeze ended!");
-        },5000);
+            document.getElementById('timer')?.classList.remove('frozen');
+            showPopup("⏱ Timer running again.");
+        },10000);
     }
     
     if(type==='hint'){
@@ -1230,31 +1371,31 @@ function usePower(type){
             }
         } 
         if(nearest){
-            hintGate=nearest; 
-            alert("🔍 Nearest gate highlighted in yellow!");
+            hintGate=nearest;
+            showPopup("🔍 Nearest gate highlighted in yellow!");
             setTimeout(()=>{
                 hintGate=null;
             },3000);
         } else {
-            alert("No unopened gates nearby!");
+            showPopup("No unopened gates left!");
             // Refund the power-up since no gates available
             user.powerUps[type]++;
         }
     }
     
     if(type==='skip'){
+        // Open the closest unopened gate (previously it opened whichever was first in the list).
+        const target = gates.filter(g=>!g.opened)
+            .sort((a,b)=>(Math.abs(player.x-a.x)+Math.abs(player.y-a.y))-(Math.abs(player.x-b.x)+Math.abs(player.y-b.y)))[0];
         let skipped = false;
-        for(const g of gates){
-            if(!g.opened){
-                g.opened=true;
-                skipped = true;
-                flashHUD();
-                alert("✅ Skip Gate used! One gate has been opened.");
-                break;
-            }
+        if(target){
+            target.opened=true;
+            skipped = true;
+            flashHUD();
+            showPopup("✅ Skip Gate used — nearest gate opened.");
         }
         if(!skipped){
-            alert("No gates to skip!");
+            showPopup("No gates to skip!");
             // Refund the power-up since no gates available
             user.powerUps[type]++;
         }
@@ -1263,7 +1404,7 @@ function usePower(type){
     if(type==='scoreDoubler'){
         scoreDoublerActive=true;
         document.getElementById('scoreDoublerBtn').classList.add('power-up-active');
-        alert("💰 Score Doubler active for your next correct answer!");
+        showPopup("💰 Score Doubler active for your next correct answer!");
     }
     
     saveUser();
@@ -1283,7 +1424,7 @@ function hideShop() {
 
 function buyPowerUp(type, price) {
     if (user.coins < price) {
-        alert(`Not enough coins! You need ${price} coins but only have ${user.coins}.`);
+        showPopup(`Not enough coins! You need ${price} coins but only have ${user.coins}.`);
         return;
     }
     
@@ -1297,7 +1438,7 @@ function buyPowerUp(type, price) {
     animateReward('coins', -price);
     flashHUD();
     
-    alert(`✅ Purchased 1 ${type} power-up!`);
+    showPopup(`✅ Purchased 1 ${type} power-up!`);
     saveUser();
     updateHUD();
     scheduleSync();
@@ -1306,7 +1447,7 @@ function buyPowerUp(type, price) {
 function buyPowerUpPack() {
     const price = 100;
     if (user.coins < price) {
-        alert(`Not enough coins! You need ${price} coins but only have ${user.coins}.`);
+        showPopup(`Not enough coins! You need ${price} coins but only have ${user.coins}.`);
         return;
     }
     
@@ -1319,7 +1460,7 @@ function buyPowerUpPack() {
     animateReward('coins', -price);
     flashHUD();
     
-    alert("🎒 Purchased Power-Up Pack! +1 of each power-up.");
+    showPopup("🎒 Purchased Power-Up Pack! +1 of each power-up.");
     saveUser();
     updateHUD();
     scheduleSync();
@@ -1328,7 +1469,7 @@ function buyPowerUpPack() {
 function buyMegaPack() {
     const price = 250;
     if (user.coins < price) {
-        alert(`Not enough coins! You need ${price} coins but only have ${user.coins}.`);
+        showPopup(`Not enough coins! You need ${price} coins but only have ${user.coins}.`);
         return;
     }
     
@@ -1341,30 +1482,39 @@ function buyMegaPack() {
     animateReward('coins', -price);
     flashHUD();
     
-    alert("💎 Purchased Mega Pack! +3 of each power-up.");
+    showPopup("💎 Purchased Mega Pack! +3 of each power-up.");
     saveUser();
     updateHUD();
     scheduleSync();
 }
 
 // ===== Level Complete =====
+// Player level comes from XP only (checkLevelUp) — finishing a maze no longer
+// grants a free level on top of that.
 function nextLevel(){
     levelPopup.classList.remove("show");
-    user.level++;
+    levelComplete = false;
+    wrongAttempts = 0;
+    hintGate = null;
     player={...start};
-    countdown = TIME_BY_DIFF[selectedDifficulty] || 60;
     generateMaze();
     generateGates();
-    saveUser();
+    resetTimer();
     updateHUD();
-    scheduleSync();
+    try { canvas.focus(); } catch(e) {}
 }
 
+// Same maze, gates closed again, so the exit reward can't be farmed for free.
 function restartLevel(){
     levelPopup.classList.remove("show");
+    levelComplete = false;
+    wrongAttempts = 0;
+    hintGate = null;
     player={...start};
-    countdown = TIME_BY_DIFF[selectedDifficulty] || 60;
+    gates.forEach(g => g.opened = false);
+    resetTimer();
     updateHUD();
+    try { canvas.focus(); } catch(e) {}
 }
 
 async function goToDashboard() {
@@ -1379,16 +1529,21 @@ async function goToDashboard() {
 }
 
 // ===== Countdown Timer =====
+// Only ticks while a timed maze is actually being played (not on the subject
+// screen, not after reaching the exit, not while frozen).
 setInterval(()=>{
-    if(!isTimeFrozen){
-        countdown--;
-        if(countdown<0){
-            player={...start};
-            countdown = TIME_BY_DIFF[selectedDifficulty] || 60;
-            alert("⏳ Time over! Restarted level.");
-        }
-        document.getElementById('timeLeft').innerText=countdown;
+    if (countdown === null || isTimeFrozen || levelComplete || !maze.length) return;
+    countdown--;
+    if (countdown < 0) {
+        popup.classList.remove('show');
+        player = {...start};
+        wrongAttempts = 0;
+        answerCombo = 0;
+        resetTimer();
+        showPopup("⏳ Time's up! Back to the start.");
+        return;
     }
+    renderTimer();
 },1000);
 
 // ===== Popup Function =====
@@ -1399,7 +1554,7 @@ function showPopup(msg){
     document.body.appendChild(popup);
     setTimeout(()=>{
         popup.classList.remove('show');
-        setTimeout(()=>document.body.removeChild(popup),300);
+        setTimeout(()=>popup.remove(),300);
     },2000);
 }
 
@@ -1422,17 +1577,21 @@ function showTempMessage(message) {
     document.body.appendChild(tempMsg);
     
     setTimeout(() => {
-        document.body.removeChild(tempMsg);
+        tempMsg.remove();
     }, 3000);
 }
 
 // ===== Init =====
 // Initialize the game
 function initGame() {
+    levelComplete = false;
+    player = {...start};
     generateMaze();
     generateGates();
+    resetTimer();
     updateHUD();
-    drawMaze();
+    if (!drawLoopStarted) { drawLoopStarted = true; drawMaze(); }
+    try { canvas.focus(); } catch(e) {}
     // Count a game start once per session
     if (!window._gameSessionCounted) {
         user.total_games += 1;
@@ -1452,8 +1611,16 @@ if (diffParam === 'easy' || diffParam === 'medium' || diffParam === 'hard') {
     selectedDifficulty = diffParam.charAt(0).toUpperCase() + diffParam.slice(1);
     showTempMessage(`Difficulty: ${selectedDifficulty}`);
 }
-// Always show subject selection so the player can choose a subject
-document.getElementById('subjectSelection').style.display = 'block';
+renderTimer();
+// Coming from the choose-subject page with ?subject=... → start straight away.
+const subjectParam = urlParams.get('subject');
+if (subjectParam && questionBanks[subjectParam]) {
+    selectedSubject = subjectParam;
+    startGameWithSubject();
+} else {
+    // Otherwise show subject selection so the player can choose a subject
+    document.getElementById('subjectSelection').style.display = 'block';
+}
 </script>
 </body>
 </html>

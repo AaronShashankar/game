@@ -151,12 +151,12 @@
 
     // Back button → dashboard
     function goBack() {
-      window.location.href = '<?= url('''') ?>';
+      window.location.href = '<?= url('dashboard') ?>';
     }
 
     // Subject click → open game page
     function selectSubject(subject) {
-      window.location.href = `game.html?difficulty=${diff}&subject=${encodeURIComponent(subject)}`;
+      window.location.href = `<?= url('game') ?>?difficulty=${diff}&subject=${encodeURIComponent(subject)}`;
     }
   </script>
 </body>

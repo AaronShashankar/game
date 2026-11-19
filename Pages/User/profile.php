@@ -255,13 +255,20 @@ localStorage.setItem("user",JSON.stringify(user));
 function saveProfile(){
 user.username = document.getElementById("username").value;
 user.email = document.getElementById("email").value;
-const newPassword = document.getElementById("password").value;
-if(newPassword){user.password = newPassword; document.getElementById("password").value="";}
+// Password changes aren't supported by the API yet; never keep a password client-side.
+document.getElementById("password").value="";
+delete user.password;
 
-// Send to backend
-fetch('<?= url(''/api/'') ?>'update_profile.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(user)})
+// Send only the editable profile fields — never coins/xp from localStorage,
+// which would overwrite the real values on the server.
+fetch('<?= url('api/') ?>sync_profile.php',{
+  method:'POST',
+  credentials:'same-origin',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({username:user.username,email:user.email,avatar:user.avatar})
+})
 .then(res=>res.json())
-.then(data=>{if(data.status==='success'){alert("Profile updated! ✅");} else {alert("Error updating profile ⚠️");}})
+.then(data=>{if(data.success){alert("Profile updated! ✅");} else {alert("Error updating profile ⚠️ " + (data.message||''));}})
 .catch(err=>console.error(err));
 
 updateProfile();

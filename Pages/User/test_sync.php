@@ -47,7 +47,7 @@
     async function checkSession() {
       const statusDiv = document.getElementById('sessionStatus');
       try {
-        const res = await fetch('<?= url(''/api/'') ?>'user_profile.php', { credentials: 'same-origin' });
+        const res = await fetch('<?= url('api/') ?>user_profile.php', { credentials: 'same-origin' });
         const data = await res.json();
         
         if (data.success) {
@@ -89,7 +89,7 @@
         form.append('xp', 500);
         form.append('streak', 5);
         
-        const res = await fetch('<?= url(''/api/'') ?>'sync_profile.php', { 
+        const res = await fetch('<?= url('api/') ?>sync_profile.php', { 
           method: 'POST', 
           body: form, 
           credentials: 'same-origin'
@@ -155,7 +155,7 @@
       dataDiv.innerHTML = '<div class="status info">Loading from database...</div>';
       
       try {
-        const res = await fetch('<?= url(''/api/'') ?>'user_profile.php', { credentials: 'same-origin' });
+        const res = await fetch('<?= url('api/') ?>user_profile.php', { credentials: 'same-origin' });
         const data = await res.json();
         
         if (data.success) {

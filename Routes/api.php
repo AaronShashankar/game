@@ -3,17 +3,16 @@
 
 // Define API routes
 $apiRoutes = [
-    '/api/user_login.php' => 'Api/user_login.php',
-    '/api/admin_login.php' => 'Api/admin_login.php',
-    '/api/api.php' => 'Api/api.php',
-    '/api/check_in.php' => 'Api/check_in.php',
-    '/api/game_session_api.php' => 'Api/game_session_api.php',
-    '/api/leaderboard.php' => 'Api/leaderboard.php',
-    '/api/logout.php' => 'Api/logout.php',
-    '/api/register.php' => 'Api/register.php',
-    '/api/sync_profile.php' => 'Api/sync_profile.php',
-    '/api/user_profile.php' => 'Api/user_profile.php',
-    '/api/admin_api.php' => 'Api/admin_api.php',
+    '/api/user_login.php' => 'api/user_login.php',
+    '/api/admin_login.php' => 'api/admin_login.php',
+    '/api/check_in.php' => 'api/check_in.php',
+    '/api/game_session_api.php' => 'api/game_session_api.php',
+    '/api/leaderboard.php' => 'api/leaderboard.php',
+    '/api/logout.php' => 'api/logout.php',
+    '/api/register.php' => 'api/register.php',
+    '/api/sync_profile.php' => 'api/sync_profile.php',
+    '/api/user_profile.php' => 'api/user_profile.php',
+    '/api/admin_api.php' => 'api/admin_api.php',
 ];
 
 if (array_key_exists($requestUri, $apiRoutes)) {
