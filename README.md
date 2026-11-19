@@ -1,86 +1,78 @@
 # MazeQuest
 
-MazeQuest is a modern, interactive, and educational web application that combines the thrill of navigating mazes with intellectual challenges. Solve puzzles, answer questions, and compete with others while learning new subjects!
+An educational maze game. Walk through a maze, answer a quiz question at each gate to open it, and reach the exit. Correct answers earn coins and XP. Players level up, keep daily streaks, buy power-ups, and compete on leaderboards.
 
-## Features
-- **Educational Gaming**: Encounter quiz checkpoints inside mazes to unlock paths.
-- **Multiple Difficulties**: Choose from Beginner, Intermediate, and Pro mazes.
-- **Progress Tracking**: Level up, earn XP, and collect daily coins.
-- **Global Leaderboard**: Compete with players worldwide for the top rank.
-- **Customizable Themes**: Light and dark mode support with sleek UI designs.
-- **Role-based Authentication**: Dedicated portals for standard users and administrators.
+The **server** owns every reward. The browser draws the maze and sends what the player did (which gate, which answer, which power-up). The server checks it, scores it and records it in a ledger. A player cannot give themselves coins or XP from the browser console. See [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) for the design and the reasons behind it.
 
-## Project Architecture
-This application strictly follows modern PHP best practices, employing an MVC-inspired directory structure for clean separation of concerns.
+## Tech
+
+- PHP 8.1+ (no framework, no Composer; small built-in autoloader)
+- MySQL 5.7+ / MariaDB 10.4+ through PDO
+- Apache with `mod_rewrite`
+- Vanilla JS/CSS. Chart.js 4.4.1 from a CDN on the dashboard.
+
+## Folder structure
 
 ```text
 /
-├── Api/                 # All RESTful API endpoints and JSON responses
-├── assets/              # Static assets
-│   ├── css/             # Global and page-specific stylesheets
-│   ├── images/          # Images, icons, and game assets
-│   └── js/              # Client-side JavaScript
-├── Components/          # Shared UI elements (header, footer, navbars)
-├── Config/              # Configuration files (Database connection)
-├── database/            # Database schema and seeders
-│   ├── schema/          # SQL dumps
-├── Pages/               # UI Views (converted to PHP for templating)
-│   ├── Admin/           # Admin portal pages
-│   ├── User/            # User-facing pages (dashboard, game, profile)
-│   └── index.php        # Main landing page
-├── Routes/              # Application routing logic
-│   ├── api.php          # API endpoint routes
-│   └── web.php          # Web page routes
-├── Services/            # Business logic (e.g., AuthService)
-├── Utils/               # Global helper functions (url(), asset(), etc.)
-├── .htaccess            # Apache configuration for URL rewriting
-└── index.php            # Front Controller handling all incoming requests
+├── .htaccess              # forwards every request into public/
+├── .env.example           # copy to .env (git-ignored)
+├── config/app.php         # db, base_path, debug — read from .env
+├── public/                # the only web-reachable folder
+│   ├── index.php          # front controller
+│   ├── .htaccess          # non-files → index.php
+│   └── assets/{css,js,images}
+├── src/                   # namespace App\
+│   ├── bootstrap.php      # autoloader, .env loader, helpers
+│   ├── routes.php         # every URL, with its guard (public / player / admin)
+│   ├── Http/              # Router, Request, Auth (session), Controllers/
+│   ├── Services/          # game rules and business logic (RunService, ProgressionService, …)
+│   ├── Repositories/      # all SQL lives here
+│   └── Support/           # Database, ApiError, helpers.php
+├── views/                 # PHP templates: landing, layouts/, user/, admin/
+├── database/
+│   ├── migrate.php        # CLI: apply pending migrations
+│   ├── create_admin.php   # CLI: create an admin account
+│   ├── migrations/        # 001_core_schema, 002_migrate_legacy_data, 003_seed_…
+│   └── seeds/questions.json
+└── docs/                  # implementation report; legacy/ holds outdated docs
 ```
 
-## Technologies Used
-- **Backend**: PHP 8+
-- **Database**: MySQL / MariaDB (PDO)
-- **Frontend**: HTML5, Vanilla CSS3, Vanilla JavaScript
-- **Server**: Apache (with mod_rewrite)
+A request goes **Router → Controller → Service → Repository → DB**. Controllers only read input and return data. Rules live in services. SQL lives only in repositories.
 
-## Installation & Setup
+## Setup (XAMPP / LAMP)
 
-1. **Clone the Repository**
-   Ensure you have XAMPP, WAMP, or an equivalent LAMP stack installed. Clone this repository into your `htdocs` or `www` directory.
+1. Put the project in your web root, e.g. `htdocs/game`, and make sure `mod_rewrite` is enabled and `AllowOverride All` is set.
+2. Create the database and configure it:
    ```bash
-   git clone https://github.com/yourusername/mazequest.git game
+   cp .env.example .env        # edit DB_* if you're not on XAMPP's root/no-password defaults
+   mysql -u root -e "CREATE DATABASE mazequest CHARACTER SET utf8mb4"
    ```
+3. Run the migrations (CLI only; they can't be run from a browser):
+   ```bash
+   php database/migrate.php            # apply pending migrations
+   php database/migrate.php --status   # show what's applied
+   ```
+   This is safe on an **existing** MazeQuest database. Old data is converted (see the report) and the old tables are renamed `legacy_*`. Nothing is dropped.
+4. Create an admin (there are no default credentials):
+   ```bash
+   php database/create_admin.php admin@example.com admin 'a-strong-password'
+   ```
+5. Open `http://localhost/game/`. The base path is detected automatically. Set `BASE_PATH` in `.env` only if detection gets it wrong.
 
-2. **Database Setup**
-   - Open phpMyAdmin or your preferred SQL client.
-   - Import the schema located at `database/schema/mazequest.sql`.
-   - To insert default test users and admins, you can run the provided seeder script:
-     ```bash
-     php database/setup_db.php
-     ```
+**Better for production:** point the Apache `DocumentRoot` directly at `public/`, so `src/`, `config/` and `.env` can't be reached even if `.htaccess` is ignored.
 
-3. **Configuration**
-   - The database connection string is located at `Config/database.php`. Modify the credentials (`$username`, `$password`, `$dbname`) if your local MySQL configuration differs from the defaults.
+## Pages
 
-4. **Apache Configuration**
-   - Ensure `mod_rewrite` is enabled on your Apache server for the `.htaccess` routing to function.
+| URL | Who |
+|---|---|
+| `/` · `/leaderboard` · `/howtoplay` | everyone |
+| `/user` · `/register` | player login / sign-up |
+| `/dashboard` · `/choose-subject` · `/game` · `/shop` · `/profile` | logged-in players |
+| `/admin` → `/admin-panel` | admins (separate `admin` table and session key) |
 
-## Usage Guide
-- **Landing Page**: Navigate to `http://localhost/game/`
-- **User Login**: Navigate to `http://localhost/game/user`
-- **Admin Login**: Navigate to `http://localhost/game/admin`
+The JSON API is listed in the report.
 
-*Default seeded credentials (if `setup_db.php` is run):*
-- **Admin**: `admin@mazequest.com` / `admin`
-- **User**: `user@mazequest.com` / `user`
+## Changing the game
 
-## Future Improvements
-- Migration to a fully-fledged PHP Framework (e.g., Laravel, Symfony).
-- WebSocket integration for real-time multiplayer racing.
-- Expanded Google Books API integration for dynamic subject generation.
-
-## License
-MIT License. See `LICENSE` for more information.
-
-## Author
-Created by the MazeQuest Team.
+Difficulty sizes, timers, gate counts, rewards, penalties, spin limits and power-up prices are all in **[src/Services/GameRules.php](src/Services/GameRules.php)**. The client reads difficulties from the server, so a change there applies everywhere. Questions are in the `questions` table (seeded from `database/seeds/questions.json`).

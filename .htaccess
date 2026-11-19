@@ -1,19 +1,8 @@
+# Used when the whole project folder is web-reachable (e.g. XAMPP htdocs/game).
+# Everything is forwarded into public/, so src/, config/, database/, views/,
+# .env etc. can never be requested directly.
+#
+# If you can point Apache's DocumentRoot at public/ instead, this file is unused.
+
 RewriteEngine On
-RewriteBase /game/
-
-# Static assets are served directly.
-RewriteRule ^assets/ - [L]
-
-# Never serve internals, setup/migration scripts, tests or docs over HTTP.
-RewriteRule ^(Config|Services|Utils|Routes|Components|Pages|database)(/|$) - [F,L]
-RewriteRule ^test_[^/]*\.php$ - [F,L]
-RewriteRule \.(md|sql)$ - [F,L]
-
-# All API calls go through the front controller (so sessions, helpers and
-# auth guards are always loaded), even though the files exist on disk.
-RewriteRule ^api/ index.php [L,QSA]
-
-# Everything else that isn't a real file/dir goes to the front controller.
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [L,QSA]
+RewriteRule ^(.*)$ public/$1 [L]
