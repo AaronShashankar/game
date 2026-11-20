@@ -6,9 +6,9 @@ use App\Services\GameRules;
 $active = 'home';
 require __DIR__ . '/layouts/header.php';
 $diffCopy = [
-    'Easy'   => 'A small maze with no clock. Good for learning the ropes.',
-    'Medium' => 'A bigger maze against the clock. Wrong answers cost coins.',
-    'Hard'   => 'A large maze in fog of war. You only see what is near you.',
+  'Easy' => 'A small maze with no clock. Good for learning the ropes.',
+  'Medium' => 'A bigger maze against the clock. Wrong answers cost coins.',
+  'Hard' => 'A large maze in fog of war. You only see what is near you.',
 ];
 ?>
 
@@ -16,15 +16,25 @@ $diffCopy = [
   <div>
     <p class="eyebrow">An educational maze game</p>
     <h1>Learn by finding your way out.</h1>
-    <p class="hero-sub">Walk the maze, answer a question at every gate, and reach the exit. Right answers earn coins and XP. Guessing doesn't.</p>
+    <p class="hero-sub">Walk the maze, answer a question at every gate, and reach the exit. Right answers earn coins and
+      XP. Guessing doesn't.</p>
     <div class="hero-cta">
       <a class="btn btn-primary btn-lg" href="<?= url('register') ?>"><?= icon('play') ?>Start playing — it's free</a>
       <a class="btn btn-secondary btn-lg" href="<?= url('howtoplay') ?>">How it works</a>
     </div>
     <dl class="hero-facts">
-      <div><dt><?= count($subjects) ?></dt><dd>Subjects</dd></div>
-      <div><dt><?= count($difficulties) ?></dt><dd>Difficulty levels</dd></div>
-      <div><dt>∞</dt><dd>Mazes, each one new</dd></div>
+      <div>
+        <dt><?= count($subjects) ?></dt>
+        <dd>Subjects</dd>
+      </div>
+      <div>
+        <dt><?= count($difficulties) ?></dt>
+        <dd>Difficulty levels</dd>
+      </div>
+      <div>
+        <dt>∞</dt>
+        <dd>Mazes, each one new</dd>
+      </div>
     </dl>
   </div>
   <div class="hero-art"><?php require __DIR__ . '/partials/maze-art.php'; ?></div>
@@ -36,10 +46,26 @@ $diffCopy = [
     <h2 class="section-title">Simple to pick up, rewarding to master</h2>
   </div>
   <div class="feature-grid">
-    <div class="card feature"><div class="icon-box"><?= icon('bulb') ?></div><h3>Learn at every gate</h3><p>Answer to open the gate. Miss it and you see the right answer and why.</p></div>
-    <div class="card feature"><div class="icon-box"><?= icon('target') ?></div><h3>Reviews that stick</h3><p>Questions you missed come back in later mazes until you know them.</p></div>
-    <div class="card feature"><div class="icon-box"><?= icon('flame') ?></div><h3>A new maze every day</h3><p>Everyone plays the same daily maze. Keep your streak going to grow your bonus.</p></div>
-    <div class="card feature"><div class="icon-box"><?= icon('trophy') ?></div><h3>Compete with friends</h3><p>Send a challenge link, climb the boards, and win coins in the weekly top 3.</p></div>
+    <div class="card feature">
+      <div class="icon-box"><?= icon('bulb') ?></div>
+      <h3>Learn at every gate</h3>
+      <p>Answer to open the gate. Miss it and you see the right answer and why.</p>
+    </div>
+    <div class="card feature">
+      <div class="icon-box"><?= icon('target') ?></div>
+      <h3>Reviews that stick</h3>
+      <p>Questions you missed come back in later mazes until you know them.</p>
+    </div>
+    <div class="card feature">
+      <div class="icon-box"><?= icon('flame') ?></div>
+      <h3>A new maze every day</h3>
+      <p>Everyone plays the same daily maze. Keep your streak going to grow your bonus.</p>
+    </div>
+    <div class="card feature">
+      <div class="icon-box"><?= icon('trophy') ?></div>
+      <h3>Compete with friends</h3>
+      <p>Send a challenge link, climb the boards, and win coins in the weekly top 3.</p>
+    </div>
   </div>
 </section>
 
@@ -54,14 +80,29 @@ $diffCopy = [
       <div class="card">
         <div class="row-between">
           <h3 style="font-size:17px"><?= e($name) ?></h3>
-          <span class="chip<?= $name === 'Medium' ? ' chip-accent' : '' ?>">×<?= rtrim(rtrim(number_format($d['mult'], 1), '0'), '.') ?> rewards</span>
+          <span
+            class="chip<?= $name === 'Medium' ? ' chip-accent' : '' ?>">×<?= rtrim(rtrim(number_format($d['mult'], 1), '0'), '.') ?>
+            rewards</span>
         </div>
         <p class="muted mt-8" style="font-size:14px"><?= e($diffCopy[$name] ?? '') ?></p>
         <dl class="spec">
-          <div><dt>Maze</dt><dd><?= $d['size'] ?> × <?= $d['size'] ?></dd></div>
-          <div><dt>Gates</dt><dd><?= $d['gates'] ?></dd></div>
-          <div><dt>Time limit</dt><dd><?= $d['time'] ? floor($d['time'] / 60) . ':' . str_pad((string) ($d['time'] % 60), 2, '0') : 'None' ?></dd></div>
-          <div><dt>Fog of war</dt><dd><?= $d['fog'] ? 'Yes' : 'No' ?></dd></div>
+          <div>
+            <dt>Maze</dt>
+            <dd><?= $d['size'] ?> × <?= $d['size'] ?></dd>
+          </div>
+          <div>
+            <dt>Gates</dt>
+            <dd><?= $d['gates'] ?></dd>
+          </div>
+          <div>
+            <dt>Time limit</dt>
+            <dd><?= $d['time'] ? floor($d['time'] / 60) . ':' . str_pad((string) ($d['time'] % 60), 2, '0') : 'None' ?>
+            </dd>
+          </div>
+          <div>
+            <dt>Fog of war</dt>
+            <dd><?= $d['fog'] ? 'Yes' : 'No' ?></dd>
+          </div>
         </dl>
       </div>
     <?php endforeach; ?>
@@ -74,10 +115,13 @@ $diffCopy = [
       <p class="eyebrow">Leaderboard</p>
       <h2 class="section-title">Top explorers</h2>
       <p class="section-sub">Ranked by lifetime XP. Every point was earned in a verified game.</p>
-      <a href="<?= url('leaderboard') ?>" class="btn btn-secondary mt-24">See full leaderboard <?= icon('arrow-right', 'icon-sm') ?></a>
+      <a href="<?= url('leaderboard') ?>" class="btn btn-secondary mt-24">See full leaderboard
+        <?= icon('arrow-right', 'icon-sm') ?></a>
     </div>
     <div class="card" style="padding:8px 20px">
-      <div class="list" id="leader-list-landing"><div class="empty">Loading…</div></div>
+      <div class="list" id="leader-list-landing">
+        <div class="empty">Loading…</div>
+      </div>
     </div>
   </div>
 </section>
@@ -86,7 +130,8 @@ $diffCopy = [
   <div class="cta-band">
     <div>
       <h2>Ready to find the exit?</h2>
-      <p>Create an account and get <?= GameRules::STARTER_COINS ?> coins and <?= GameRules::STARTER_POWERUPS ?> of every power-up to start.</p>
+      <p>Create an account and get <?= GameRules::STARTER_COINS ?> coins and <?= GameRules::STARTER_POWERUPS ?> of every
+        power-up to start.</p>
     </div>
     <a class="btn btn-primary btn-lg" href="<?= url('register') ?>">Create free account</a>
   </div>

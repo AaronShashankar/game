@@ -15,11 +15,13 @@ require __DIR__ . '/../layouts/document-start.php';
     <form id="loginForm" class="form" novalidate>
       <div class="field">
         <label for="loginUsername">Email</label>
-        <input class="input" type="email" id="loginUsername" name="email" autocomplete="email" placeholder="you@example.com" required>
+        <input class="input" type="email" id="loginUsername" name="email" autocomplete="email"
+          placeholder="you@example.com" required>
       </div>
       <div class="field">
         <label for="loginPassword">Password</label>
-        <input class="input" type="password" id="loginPassword" name="password" autocomplete="current-password" placeholder="••••••••" required>
+        <input class="input" type="password" id="loginPassword" name="password" autocomplete="current-password"
+          placeholder="••••••••" required>
       </div>
       <div id="loginErrorMessage" class="form-error" role="alert"></div>
       <button type="submit" class="btn btn-primary btn-lg btn-block" id="loginButton">Log in</button>
