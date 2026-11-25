@@ -83,6 +83,13 @@ final class GameRules
         return $cfg;
     }
 
+    // A subject can be shown to players once it has enough active questions
+    // to fill the biggest maze (Hard: 7 gates) without repeating one.
+    public static function minSubjectQuestions(): int
+    {
+        return max(array_column(self::DIFFICULTIES, 'gates'));
+    }
+
     // Coins for a correct answer. Full reward on the first try, half on the
     // second, nothing after that — guessing through all options doesn't pay.
     public static function gateCoins(int $attemptNo, int $combo, bool $doubled): int

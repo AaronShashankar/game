@@ -10,7 +10,10 @@ function showError(message) {
 }
 
 // ---- Tabs ---------------------------------------------------------------------
-const LOADERS = { dashboard: loadDashboardData, users: loadUsersTable, questions: loadQuestions, security: loadSecurityLogs, analytics: loadAnalytics };
+const LOADERS = {
+  dashboard: loadDashboardData, users: loadUsersTable, subjects: loadSubjects, questions: loadQuestionsTab,
+  security: loadSecurityLogs, analytics: loadAnalytics,
+};
 let currentTab = 'dashboard';
 
 function switchTab(tabName) {
@@ -113,9 +116,158 @@ async function deleteUser(userId, username) {
   }
 }
 
+// ---- Subjects -----------------------------------------------------------------
+// [{id, name, description, icon, visible, total, active_count, easy, medium, hard}]
+let subjectList = [];
+let minSubjectQuestions = 7;
+
+async function fetchSubjects() {
+  const r = await App.api('/api/admin/subjects');
+  subjectList = r.subjects;
+  minSubjectQuestions = r.min_questions;
+  fillSubjectSelects();
+  return subjectList;
+}
+
+// The question filter and the question form both list every subject.
+function fillSubjectSelects() {
+  const filter = $('qSubject');
+  const current = filter.value;
+  filter.innerHTML = '<option value="">All subjects</option>'
+    + subjectList.map((s) => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+  filter.value = subjectList.some((s) => s.name === current) ? current : '';
+  $('qFormSubject').innerHTML = subjectList
+    .map((s) => `<option value="${esc(s.name)}">${esc(s.name)}${s.visible ? '' : ' (hidden)'}</option>`).join('');
+}
+
+function subjectStatus(s) {
+  const n = s.active_count;
+  if (s.visible) {
+    if (n === 0) return '<span class="chip chip-warning">Visible · no active questions</span>';
+    if (n < minSubjectQuestions) return `<span class="chip chip-warning">Visible · only ${n}</span>`;
+    return '<span class="chip chip-success">Visible</span>';
+  }
+  const short = minSubjectQuestions - n;
+  return '<span class="chip">Hidden</span>'
+    + `<div class="subtle" style="font-size:12px; margin-top:4px">${short > 0 ? `Needs ${short} more question${short === 1 ? '' : 's'}` : 'Ready to show'}</div>`;
+}
+
+async function loadSubjects() {
+  const body = $('subjectRows');
+  try {
+    await fetchSubjects();
+    if (!subjectList.length) {
+      body.innerHTML = '<tr><td colspan="5" class="empty">No subjects yet. Add one to start writing questions.</td></tr>';
+      return;
+    }
+    body.innerHTML = '';
+    for (const s of subjectList) {
+      const archived = s.total - s.active_count;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="wrap"><div class="subject-cell"><span class="icon-box">${App.icon(s.icon)}</span>
+          <div><div style="font-weight:500">${esc(s.name)}</div>
+          <div class="subtle" style="font-size:13px">${s.description ? esc(s.description) : 'No description'}</div></div></div></td>
+        <td class="num"><button class="link link-btn" data-act="view" style="margin:0" title="Show these questions">${fmt(s.active_count)}</button>
+          ${archived ? `<div class="subtle" style="font-size:12px">+${fmt(archived)} archived</div>` : ''}</td>
+        <td class="subtle" style="font-size:13px">Easy ${s.easy} · Medium ${s.medium} · Hard ${s.hard}</td>
+        <td>${subjectStatus(s)}</td>
+        <td style="text-align:right; white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" data-act="add">${App.icon('plus', 'icon-sm')}Add question</button>
+          <button class="btn btn-ghost btn-sm" data-act="visibility">${App.icon(s.visible ? 'eye-off' : 'eye', 'icon-sm')}${s.visible ? 'Hide' : 'Show'}</button>
+          <button class="btn btn-ghost btn-sm" data-act="edit">${App.icon('pencil', 'icon-sm')}Edit</button>
+          ${s.total === 0 ? `<button class="btn btn-ghost btn-sm" data-act="delete">${App.icon('trash', 'icon-sm')}Delete</button>` : ''}
+        </td>`;
+      row.querySelector('[data-act=view]').addEventListener('click', () => showSubjectQuestions(s.name));
+      row.querySelector('[data-act=add]').addEventListener('click', () => openQuestionModal(null, s.name));
+      row.querySelector('[data-act=visibility]').addEventListener('click', () => setSubjectVisible(s, !s.visible));
+      row.querySelector('[data-act=edit]').addEventListener('click', () => openSubjectModal(s.id));
+      row.querySelector('[data-act=delete]')?.addEventListener('click', () => deleteSubject(s));
+      body.appendChild(row);
+    }
+  } catch (e) {
+    body.innerHTML = `<tr><td colspan="5" class="empty">${esc(e.message)}</td></tr>`;
+  }
+}
+
+function showSubjectQuestions(name) {
+  $('qSubject').value = name;
+  $('qSearch').value = '';
+  switchTab('questions');
+}
+
+function openSubjectModal(id = null) {
+  const s = id ? subjectList.find((x) => x.id === id) : null;
+  $('subjectModalTitle').textContent = s ? 'Edit subject' : 'Add subject';
+  $('subjectModalSub').textContent = s
+    ? 'Renaming also renames it on its questions and past games.'
+    : `It starts hidden. Add at least ${minSubjectQuestions} questions, then show it to players.`;
+  $('sId').value = s ? s.id : '';
+  $('sName').value = s ? s.name : '';
+  $('sDescription').value = s ? (s.description ?? '') : '';
+  const icon = document.querySelector(`input[name=sIcon][value="${s ? s.icon : 'book'}"]`) || document.querySelector('input[name=sIcon]');
+  icon.checked = true;
+  $('subjectModal').classList.add('show');
+  $('sName').focus();
+}
+
+function closeSubjectModal() {
+  $('subjectModal').classList.remove('show');
+}
+
+$('subjectForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]');
+  btn.disabled = true;
+  try {
+    const id = $('sId').value;
+    const { subject } = await App.api('/api/admin/subjects', {
+      body: {
+        id: id || null,
+        name: $('sName').value.trim(),
+        description: $('sDescription').value.trim(),
+        icon: document.querySelector('input[name=sIcon]:checked').value,
+      },
+    });
+    App.toast(id ? 'Subject updated' : `${subject.name} added. Use Add question to write its questions.`, 'success');
+    closeSubjectModal();
+    loadSubjects();
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function setSubjectVisible(s, visible) {
+  try {
+    await App.api('/api/admin/subjects/visibility', { body: { id: s.id, visible } });
+    App.toast(visible ? `${s.name} is now on the players' subject list` : `${s.name} is hidden from players`, 'success');
+    loadSubjects();
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+async function deleteSubject(s) {
+  if (!confirm(`Delete the subject "${s.name}"? It has no questions.`)) return;
+  try {
+    await App.api('/api/admin/subjects/delete', { body: { id: s.id } });
+    App.toast(`Deleted ${s.name}`, 'success');
+    loadSubjects();
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
 // ---- Question bank ------------------------------------------------------------
 let questionCache = new Map();
 let searchTimer = null;
+
+function loadQuestionsTab() {
+  fetchSubjects().catch((e) => showError(e.message));
+  loadQuestions();
+}
 
 async function loadQuestions() {
   const body = $('questionRows');
@@ -123,8 +275,7 @@ async function loadQuestions() {
     q: $('qSearch').value.trim(), subject: $('qSubject').value, difficulty: $('qDifficulty').value, status: $('qStatus').value,
   });
   try {
-    const { questions, subjects } = await App.api('/api/admin/questions?' + params);
-    fillSubjects(subjects);
+    const { questions } = await App.api('/api/admin/questions?' + params);
     questionCache = new Map(questions.map((q) => [q.id, q]));
     $('qCount').textContent = `${questions.length} question${questions.length === 1 ? '' : 's'}${questions.length >= 500 ? ' (first 500, narrow the filters)' : ''}`;
     if (!questions.length) {
@@ -156,30 +307,33 @@ async function loadQuestions() {
   }
 }
 
-function fillSubjects(subjects) {
-  const select = $('qSubject');
-  const current = select.value;
-  select.innerHTML = '<option value="">All subjects</option>' + subjects.map((s) => `<option>${esc(s)}</option>`).join('');
-  select.value = current;
-  $('subjectList').innerHTML = subjects.map((s) => `<option value="${esc(s)}">`).join('');
-}
-
 ['qSubject', 'qDifficulty', 'qStatus'].forEach((id) => $(id).addEventListener('change', loadQuestions));
 $('qSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadQuestions, 250); });
 
-function openQuestionModal(id = null) {
+// `subject` preselects the subject for a new question (from the Subjects tab).
+function openQuestionModal(id = null, subject = null) {
+  if (!subjectList.length) {
+    showError('Add a subject first.');
+    switchTab('subjects');
+    return;
+  }
   const q = id ? questionCache.get(id) : null;
-  $('questionModalTitle').textContent = q ? 'Edit question' : 'Add question';
+  $('questionModalTitle').textContent = q ? 'Edit question' : `Add question${subject ? ' to ' + subject : ''}`;
   $('qId').value = q ? q.id : '';
-  $('qFormSubject').value = q ? q.subject : ($('qSubject').value || '');
+  $('qFormSubject').value = q ? q.subject : (subject || $('qSubject').value || subjectList[0].name);
   $('qFormDifficulty').value = q ? q.difficulty : 'Medium';
+  $('qSaveAnother').hidden = Boolean(q);
+  clearQuestionFields(q);
+  $('qFormActive').checked = q ? q.active : true;
+  $('questionModal').classList.add('show');
+  (q || subject ? $('qFormPrompt') : $('qFormSubject')).focus();
+}
+
+function clearQuestionFields(q = null) {
   $('qFormPrompt').value = q ? q.prompt : '';
   for (let i = 0; i < 4; i++) $('qOpt' + i).value = q ? (q.options[i] ?? '') : '';
   document.querySelector(`input[name=qCorrect][value="${q ? q.answer_idx : 0}"]`).checked = true;
   $('qFormExplanation').value = q ? (q.explanation ?? '') : '';
-  $('qFormActive').checked = q ? q.active : true;
-  $('questionModal').classList.add('show');
-  (q ? $('qFormPrompt') : $('qFormSubject')).focus();
 }
 
 function closeQuestionModal() {
@@ -188,14 +342,16 @@ function closeQuestionModal() {
 
 $('questionForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = e.target.querySelector('[type=submit]');
-  btn.disabled = true;
+  const another = Boolean(e.submitter?.dataset.another);
+  const buttons = e.target.querySelectorAll('[type=submit]');
+  buttons.forEach((b) => { b.disabled = true; });
   try {
     const id = $('qId').value;
+    const subject = $('qFormSubject').value;
     await App.api('/api/admin/questions', {
       body: {
         id: id || null,
-        subject: $('qFormSubject').value.trim(),
+        subject,
         difficulty: $('qFormDifficulty').value,
         prompt: $('qFormPrompt').value.trim(),
         options: [0, 1, 2, 3].map((i) => $('qOpt' + i).value),
@@ -204,13 +360,20 @@ $('questionForm').addEventListener('submit', async (e) => {
         active: $('qFormActive').checked,
       },
     });
-    App.toast(id ? 'Question updated' : 'Question added', 'success');
-    closeQuestionModal();
-    loadQuestions();
+    const hidden = subjectList.find((s) => s.name === subject)?.visible === false;
+    App.toast((id ? 'Question updated' : 'Question added') + (hidden && !id ? `. ${subject} is still hidden from players.` : ''), 'success');
+    if (another) {
+      // Keep the subject and difficulty, clear the rest for the next question.
+      clearQuestionFields();
+      $('qFormPrompt').focus();
+    } else {
+      closeQuestionModal();
+    }
+    (currentTab === 'subjects' ? loadSubjects : loadQuestions)();
   } catch (err) {
     showError(err.message);
   } finally {
-    btn.disabled = false;
+    buttons.forEach((b) => { b.disabled = false; });
   }
 });
 
@@ -256,7 +419,7 @@ async function importCsv() {
 }
 
 function downloadTemplate() {
-  const sample = ['Geography', 'Easy', 'What is the capital of Peru?', 'Lima', 'Quito', 'Bogotá', '', '1', 'Lima sits on the Pacific coast.'];
+  const sample = [subjectList[0]?.name || 'Science', 'Easy', 'What is the capital of Peru?', 'Lima', 'Quito', 'Bogotá', '', '1', 'Lima sits on the Pacific coast.'];
   const csv = window.CsvColumns.join(',') + '\n' + sample.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(',') + '\n';
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -358,11 +521,13 @@ function closeAddUserModal() {
 
 $('addUserModal').addEventListener('click', (e) => { if (e.target.id === 'addUserModal') closeAddUserModal(); });
 $('questionModal').addEventListener('click', (e) => { if (e.target.id === 'questionModal') closeQuestionModal(); });
+$('subjectModal').addEventListener('click', (e) => { if (e.target.id === 'subjectModal') closeSubjectModal(); });
 $('importModal').addEventListener('click', (e) => { if (e.target.id === 'importModal') closeImportModal(); });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   closeAddUserModal();
   closeQuestionModal();
+  closeSubjectModal();
   closeImportModal();
 });
 

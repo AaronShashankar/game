@@ -9,6 +9,7 @@ use App\Http\Request;
 use App\Services\AdminService;
 use App\Services\AuthService;
 use App\Services\QuestionService;
+use App\Services\SubjectService;
 
 final class AdminController
 {
@@ -16,6 +17,7 @@ final class AdminController
         private AdminService $admin = new AdminService(),
         private AuthService $auth = new AuthService(),
         private QuestionService $questions = new QuestionService(),
+        private SubjectService $subjects = new SubjectService(),
     ) {}
 
     public function stats(Request $r): array         { return ['stats' => $this->admin->stats()]; }
@@ -42,6 +44,33 @@ final class AdminController
     {
         $this->auth->changeAdminPassword(Auth::adminId(), $r->required('current_password'), $r->required('new_password'));
         return ['message' => 'Password updated'];
+    }
+
+    // ---- Subjects -----------------------------------------------------------
+
+    public function subjects(Request $r): array
+    {
+        return $this->subjects->list();
+    }
+
+    public function saveSubject(Request $r): array
+    {
+        $id = $r->get('id');
+        $subject = $this->subjects->save($id === null || $id === '' ? null : $r->int('id'), [
+            'name' => $r->get('name'), 'description' => $r->get('description'), 'icon' => $r->get('icon', 'book'),
+        ]);
+        return ['subject' => $subject];
+    }
+
+    public function subjectVisibility(Request $r): array
+    {
+        return ['subject' => $this->subjects->setVisible($r->int('id'), filter_var($r->get('visible'), FILTER_VALIDATE_BOOLEAN))];
+    }
+
+    public function deleteSubject(Request $r): array
+    {
+        $this->subjects->delete($r->int('id'));
+        return ['message' => 'Subject deleted'];
     }
 
     // ---- Question bank ------------------------------------------------------

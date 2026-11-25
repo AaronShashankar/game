@@ -8,7 +8,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\RunController;
 use App\Http\Router;
-use App\Repositories\QuestionRepository;
+use App\Repositories\SubjectRepository;
 use App\Services\ChallengeService;
 use App\Services\GameRules;
 
@@ -17,7 +17,7 @@ return function (Router $r): void {
     // Pages that show the game rules or subject list get them from the server.
     $withRules = fn (string $view) => fn () => view($view, [
         'difficulties' => GameRules::DIFFICULTIES,
-        'subjects'     => (new QuestionRepository())->subjects(),
+        'subjects'     => (new SubjectRepository())->playableNames(),
     ]);
 
     // ---- Pages ---------------------------------------------------------------
@@ -30,7 +30,10 @@ return function (Router $r): void {
     $r->get('/dashboard',      $withRules('user/dashboard'), 'player');
     $r->get('/profile',        $page('user/profile'), 'player');
     $r->get('/shop',           $page('user/shop'), 'player');
-    $r->get('/choose-subject', $withRules('user/choose-subject'), 'player');
+    $r->get('/choose-subject', fn () => view('user/choose-subject', [
+        'difficulties' => GameRules::DIFFICULTIES,
+        'subjects'     => (new SubjectRepository())->playable(),
+    ]), 'player');
     $r->get('/game',           $withRules('user/game'), 'player');
     $r->get('/admin-panel',    $page('admin/panel'), 'admin');
     // Public landing page for a "challenge a friend" link.
@@ -77,6 +80,10 @@ return function (Router $r): void {
     $r->get('/api/admin/analytics',      [$admin, 'analytics'], 'admin');
     $r->get('/api/admin/export',         [$admin, 'export'], 'admin');
     $r->post('/api/admin/password',      [$admin, 'changePassword'], 'admin');
+    $r->get('/api/admin/subjects',           [$admin, 'subjects'], 'admin');
+    $r->post('/api/admin/subjects',          [$admin, 'saveSubject'], 'admin');
+    $r->post('/api/admin/subjects/visibility', [$admin, 'subjectVisibility'], 'admin');
+    $r->post('/api/admin/subjects/delete',   [$admin, 'deleteSubject'], 'admin');
     $r->get('/api/admin/questions',          [$admin, 'questions'], 'admin');
     $r->post('/api/admin/questions',         [$admin, 'saveQuestion'], 'admin');
     $r->post('/api/admin/questions/status',  [$admin, 'questionStatus'], 'admin');

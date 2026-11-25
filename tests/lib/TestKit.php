@@ -105,6 +105,14 @@ final class TestKit
         $this->db->prepare($sql)->execute($params);
     }
 
+    // Creates (or updates) a subject straight in the database, skipping the
+    // admin API's rules (such as the minimum question count to show it).
+    public function subject(string $name, bool $visible = true): int
+    {
+        $this->exec('INSERT INTO subjects (name, visible) VALUES (?, ?) ON DUPLICATE KEY UPDATE visible = VALUES(visible)', [$name, (int) $visible]);
+        return (int) $this->scalar('SELECT id FROM subjects WHERE name = ?', [$name]);
+    }
+
     public function answerIdx(int $questionId): int
     {
         return (int) $this->scalar('SELECT answer_idx FROM questions WHERE id = ?', [$questionId]);

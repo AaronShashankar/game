@@ -23,6 +23,7 @@ An educational maze game. Walk through a maze, answer a quiz question at each ga
   - Streak freezes that cover a missed check-in.
 - **Admin:**
   - Players, analytics and security log.
+  - **Subjects** you can add, rename, show or hide. New subjects stay hidden until you've written their questions.
   - A **question editor** with search, filters, per-question answer stats, archiving and CSV import.
 
 The **server** owns every reward. The browser draws the maze and sends what the player did (which gate, which answer, which power-up). The server checks it, scores it and records it in a ledger. A player cannot give themselves coins or XP from the browser console. See [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) for the design and the reasons behind it.
@@ -148,7 +149,9 @@ Difficulty sizes, timers, gate counts, rewards, penalties, spin limits and power
 
 ### Questions
 
-You can add and edit questions in the admin panel under **Questions**. Questions are archived rather than deleted, because past answers refer to them. The starting set comes from `database/seeds/questions.json`.
+To add a new subject (for example *Computer Software*), open **Subjects → Add subject**. It starts hidden from players. Use **Add question** on its row to write questions, then click **Show** once it has at least 7 active questions (enough for a Hard maze without repeats).
+
+You can add and edit questions in the admin panel under **Questions**. Every question belongs to an existing subject. Questions are archived rather than deleted, because past answers refer to them. The starting set comes from `database/seeds/questions.json`.
 
 A migration updates a seeded question only if no admin has edited it, so edits made in the panel are never overwritten.
 
@@ -159,6 +162,7 @@ subject,difficulty,prompt,option1,option2,option3,option4,answer,explanation
 Science,Easy,What gas do plants take in?,Oxygen,Carbon dioxide,Nitrogen,,2,Plants use CO2 for photosynthesis.
 ```
 
+- `subject` must already exist (create it on the Subjects tab). Case doesn't matter: `science` is saved as `Science`.
 - `difficulty` is `Easy`, `Medium` or `Hard`.
 - `answer` is the number of the correct option, from 1 to 4.
 - Leave unused options empty. Each question needs at least 2 options.

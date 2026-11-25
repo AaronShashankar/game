@@ -14,12 +14,6 @@ final class QuestionRepository
 
     public function __construct() { $this->db = Database::connection(); }
 
-    public function subjects(): array
-    {
-        return $this->db->query('SELECT DISTINCT subject FROM questions WHERE active = 1 ORDER BY subject')
-                        ->fetchAll(PDO::FETCH_COLUMN);
-    }
-
     public function find(int $id): ?array
     {
         $s = $this->db->prepare('SELECT * FROM questions WHERE id = ?');
@@ -72,9 +66,13 @@ final class QuestionRepository
         return $q ? self::decode($q) : null;
     }
 
+    // Mixed mode (and the daily maze) draw from every subject players can see,
+    // so questions in a hidden, still-being-written subject never leak into play.
     private function subjectFilter(string $subject): array
     {
-        return $subject === GameRules::MIXED_SUBJECT ? ['1 = 1', []] : ['q.subject = :subject', ['subject' => $subject]];
+        return $subject === GameRules::MIXED_SUBJECT
+            ? ['q.subject IN (SELECT name FROM subjects WHERE visible = 1)', []]
+            : ['q.subject = :subject', ['subject' => $subject]];
     }
 
     private function notUsedSql(): string
@@ -98,7 +96,8 @@ final class QuestionRepository
         $mine = [];
         foreach ($s->fetchAll() as $row) $mine[$row['subject']] = $row;
 
-        $totals = $this->db->query('SELECT subject, COUNT(*) FROM questions WHERE active = 1 GROUP BY subject ORDER BY subject')
+        $totals = $this->db->query('SELECT q.subject, COUNT(*) FROM questions q JOIN subjects s ON s.name = q.subject
+                                    WHERE q.active = 1 AND s.visible = 1 GROUP BY q.subject ORDER BY q.subject')
                            ->fetchAll(PDO::FETCH_KEY_PAIR);
         $out = [];
         foreach ($totals as $subject => $total) {
@@ -142,11 +141,6 @@ final class QuestionRepository
             $q['pct_correct'] = $q['pct_correct'] === null ? null : (int) $q['pct_correct'];
             return $q;
         }, $s->fetchAll());
-    }
-
-    public function allSubjects(): array
-    {
-        return $this->db->query('SELECT DISTINCT subject FROM questions ORDER BY subject')->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public function create(array $q): int

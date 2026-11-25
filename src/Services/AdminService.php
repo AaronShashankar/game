@@ -123,6 +123,7 @@ final class AdminService
                                                 last_login, login_count, total_games, correct_answers, wrong_answers, created_at
                                          FROM users WHERE role = 'user'")->fetchAll(),
             'runs' => $this->db->query('SELECT id, user_id, difficulty, subject, status, started_at, completed_at, coins_earned, xp_earned FROM runs')->fetchAll(),
+            'subjects' => $this->db->query('SELECT id, name, description, icon, visible, created_at, updated_at FROM subjects')->fetchAll(),
             'questions' => $this->db->query('SELECT id, subject, difficulty, prompt, options, answer_idx, explanation, active, created_at, updated_at FROM questions')->fetchAll(),
             'items' => $this->shop->catalogue(),
         ];

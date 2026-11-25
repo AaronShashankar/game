@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\QuestionRepository;
+use App\Repositories\SubjectRepository;
 use App\Support\ApiError;
 use App\Support\Database;
 
@@ -16,14 +17,14 @@ final class QuestionService
     private const MAX_CSV_BYTES = 512_000;
     private const MAX_CSV_ROWS = 1000;
 
-    public function __construct(private QuestionRepository $questions = new QuestionRepository()) {}
+    public function __construct(
+        private QuestionRepository $questions = new QuestionRepository(),
+        private SubjectRepository $subjects = new SubjectRepository(),
+    ) {}
 
     public function list(array $filters): array
     {
-        return [
-            'questions' => $this->questions->search($filters),
-            'subjects'  => $this->questions->allSubjects(),
-        ];
+        return ['questions' => $this->questions->search($filters)];
     }
 
     public function save(?int $id, array $input): array
@@ -121,8 +122,10 @@ final class QuestionService
         $options = array_values(array_filter($raw, fn ($o) => $o !== ''));
 
         $fail = fn (string $msg) => throw ApiError::badRequest('INVALID_QUESTION', $msg);
-        if ($subject === '' || mb_strlen($subject) > 100) $fail('Subject is required (up to 100 characters)');
-        if ($subject === GameRules::MIXED_SUBJECT) $fail('"' . GameRules::MIXED_SUBJECT . '" is reserved; pick a real subject');
+        if ($subject === '') $fail('Subject is required');
+        // Subjects are created on the Subjects tab, so a typo can't start a new one.
+        // Matching ignores case; the question takes the subject's own spelling.
+        $subject = $this->subjects->findByName($subject)['name'] ?? $fail("Unknown subject \"$subject\". Add it on the Subjects tab first");
         if (!in_array($difficulty, GameRules::QUESTION_DIFFICULTIES, true)) $fail('Difficulty must be Easy, Medium or Hard');
         if ($prompt === '' || mb_strlen($prompt) > 500) $fail('Question text is required (up to 500 characters)');
         if (count($options) < 2 || count($options) > 4) $fail('Give 2 to 4 answer options');

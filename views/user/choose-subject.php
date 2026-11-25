@@ -1,19 +1,12 @@
 <?php
 use App\Services\GameRules;
 
-/** @var string[] $subjects */
+/** @var array<array{name: string, description: ?string, icon: string}> $subjects */
 /** @var array $difficulties */
 $title = 'New game';
 $active = 'play';
 require __DIR__ . '/../layouts/app-start.php';
 
-$meta = [
-    'Mathematics'        => ['calculator', 'Numbers, arithmetic and problem solving'],
-    'Science'            => ['flask', 'Physics, chemistry and biology'],
-    'General Knowledge'  => ['globe', 'World facts, geography and culture'],
-    'History'            => ['landmark', 'Events, people and civilisations'],
-    'English Vocabulary' => ['type', 'Words, meanings and synonyms'],
-];
 $diff = ucfirst(strtolower((string) ($_GET['difficulty'] ?? 'easy')));
 if (!isset($difficulties[$diff])) $diff = 'Easy';
 ?>
@@ -38,10 +31,10 @@ if (!isset($difficulties[$diff])) $diff = 'Easy';
 
 <h2 class="mt-24" style="font-size:15px; margin-bottom:12px">Subject</h2>
 <div class="subject-grid">
-  <?php foreach ($subjects as $s): [$ico, $desc] = $meta[$s] ?? ['book', 'Questions on ' . $s]; ?>
-    <button class="subject" data-subject="<?= e($s) ?>">
-      <span class="icon-box"><?= icon($ico) ?></span>
-      <span class="grow"><span class="subject-name"><?= e($s) ?></span><br><span class="subject-desc"><?= e($desc) ?></span></span>
+  <?php foreach ($subjects as $s): ?>
+    <button class="subject" data-subject="<?= e($s['name']) ?>">
+      <span class="icon-box"><?= icon($s['icon']) ?></span>
+      <span class="grow"><span class="subject-name"><?= e($s['name']) ?></span><br><span class="subject-desc"><?= e($s['description'] ?? 'Questions on ' . $s['name']) ?></span></span>
       <?= icon('arrow-right', 'icon-sm') ?>
     </button>
   <?php endforeach; ?>

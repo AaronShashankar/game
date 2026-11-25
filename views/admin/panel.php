@@ -1,9 +1,14 @@
 <?php
+use App\Services\GameRules;
+use App\Services\QuestionService;
+use App\Services\SubjectService;
+
 $title = 'Admin';
 require __DIR__ . '/../layouts/document-start.php';
 $tabs = [
     'dashboard' => ['Overview',  'grid'],
     'users'     => ['Players',   'users'],
+    'subjects'  => ['Subjects',  'folder'],
     'questions' => ['Questions', 'book'],
     'analytics' => ['Analytics', 'chart'],
     'security'  => ['Security',  'shield'],
@@ -61,6 +66,25 @@ $tabs = [
                 </tr>
               </thead>
               <tbody id="usersTableBody"><tr><td colspan="11" class="empty"><div class="spinner"></div>Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Subjects -->
+      <section id="subjects-tab" class="tab-content">
+        <div class="card card-flush">
+          <div class="toolbar">
+            <p class="grow subtle" style="font-size:13px">New subjects start hidden, so you can write their questions first.
+              Show a subject to players once it has at least <?= GameRules::minSubjectQuestions() ?> active questions.</p>
+            <button class="btn btn-primary btn-sm" onclick="openSubjectModal()"><?= icon('plus', 'icon-sm') ?>Add subject</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>Subject</th><th class="num">Questions</th><th>By difficulty</th><th>Players</th><th></th></tr>
+              </thead>
+              <tbody id="subjectRows"><tr><td colspan="5" class="empty"><div class="spinner"></div>Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -184,7 +208,10 @@ $tabs = [
     <form id="questionForm" class="form mt-24">
       <input type="hidden" id="qId">
       <div class="form-row">
-        <div class="field"><label for="qFormSubject">Subject</label><input class="input" id="qFormSubject" list="subjectList" required maxlength="100"><datalist id="subjectList"></datalist></div>
+        <div class="field">
+          <div class="row-between"><label for="qFormSubject">Subject</label>
+            <button type="button" class="link link-btn" style="font-size:13px" onclick="closeQuestionModal(); switchTab('subjects'); openSubjectModal()">New subject</button></div>
+          <select class="input" id="qFormSubject" required></select></div>
         <div class="field"><label for="qFormDifficulty">Difficulty</label>
           <select class="input" id="qFormDifficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
       </div>
@@ -202,7 +229,35 @@ $tabs = [
       <label class="row" style="gap:8px; font-size:14px"><input type="checkbox" id="qFormActive" checked> Active (can be asked in games)</label>
       <div class="form-actions mt-8">
         <button type="button" class="btn btn-ghost" onclick="closeQuestionModal()">Cancel</button>
+        <button type="submit" class="btn btn-secondary" data-another="1" id="qSaveAnother">Save and add another</button>
         <button type="submit" class="btn btn-primary">Save question</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Subject editor -->
+<div id="subjectModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subjectModalTitle">
+  <div class="modal-panel">
+    <button class="btn btn-ghost btn-icon modal-close" onclick="closeSubjectModal()" aria-label="Close"><?= icon('x') ?></button>
+    <h2 class="modal-title" id="subjectModalTitle">Add subject</h2>
+    <p class="modal-sub" id="subjectModalSub"></p>
+    <form id="subjectForm" class="form mt-24">
+      <input type="hidden" id="sId">
+      <div class="field"><label for="sName">Name</label><input class="input" id="sName" required maxlength="100" placeholder="e.g. Computer Software" autocomplete="off"></div>
+      <div class="field"><label for="sDescription">Description <span class="form-hint">(optional, shown on the subject picker)</span></label>
+        <input class="input" id="sDescription" maxlength="200" placeholder="e.g. Operating systems, apps and how software is built" autocomplete="off"></div>
+      <div class="field">
+        <span class="label" id="sIconLabel">Icon</span>
+        <div class="icon-picker" role="radiogroup" aria-labelledby="sIconLabel">
+          <?php foreach (SubjectService::ICONS as $i => $ico): ?>
+            <label class="icon-pick"><input type="radio" name="sIcon" value="<?= e($ico) ?>"<?= $i === 0 ? ' checked' : '' ?> aria-label="<?= e($ico) ?>"><span><?= icon($ico) ?></span></label>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <div class="form-actions mt-8">
+        <button type="button" class="btn btn-ghost" onclick="closeSubjectModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save subject</button>
       </div>
     </form>
   </div>
@@ -213,7 +268,8 @@ $tabs = [
   <div class="modal-panel modal-wide">
     <button class="btn btn-ghost btn-icon modal-close" onclick="closeImportModal()" aria-label="Close"><?= icon('x') ?></button>
     <h2 class="modal-title" id="importTitle">Import questions</h2>
-    <p class="modal-sub">One question per row. Columns: <code><?= e(implode(',', App\Services\QuestionService::CSV_COLUMNS)) ?></code>.
+    <p class="modal-sub">One question per row. Columns: <code><?= e(implode(',', QuestionService::CSV_COLUMNS)) ?></code>.
+      <code>subject</code> must already exist on the Subjects tab.
       <code>answer</code> is the number of the correct option (1–4); option3 and option4 can be empty.
       Every row is checked first: if any row has a problem, nothing is imported. Questions already in the bank are skipped.</p>
     <div class="form mt-24">
@@ -227,6 +283,6 @@ $tabs = [
   </div>
 </div>
 
-<script>window.CsvColumns = <?= json_encode(App\Services\QuestionService::CSV_COLUMNS) ?>;</script>
+<script>window.CsvColumns = <?= json_encode(QuestionService::CSV_COLUMNS) ?>;</script>
 <?= page_script('admin-panel') ?>
 <?php require __DIR__ . '/../layouts/document-end.php'; ?>

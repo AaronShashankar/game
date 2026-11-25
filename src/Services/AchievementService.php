@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Repositories\QuestionRepository;
+use App\Repositories\SubjectRepository;
 use App\Repositories\RunRepository;
 use App\Repositories\UserRepository;
 
@@ -36,7 +36,7 @@ final class AchievementService
     public function __construct(
         private UserRepository $users = new UserRepository(),
         private RunRepository $runs = new RunRepository(),
-        private QuestionRepository $questions = new QuestionRepository(),
+        private SubjectRepository $subjects = new SubjectRepository(),
     ) {}
 
     // Checks every rule that the current state can satisfy and unlocks new ones.
@@ -63,7 +63,7 @@ final class AchievementService
             $met['speedrun'] = $run['difficulty'] !== 'Easy' && (int) $run['duration_seconds'] < self::SPEEDRUN_SECONDS;
             $met['daily_first'] = $run['mode'] === 'daily';
             $met['challenge_win'] = (bool) ($outcome['challenge_won'] ?? false);
-            $met['all_subjects'] = !array_diff($this->questions->subjects(), $this->runs->completedSubjects($userId));
+            $met['all_subjects'] = !array_diff($this->subjects->playableNames(), $this->runs->completedSubjects($userId));
         }
 
         $new = [];

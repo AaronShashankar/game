@@ -10,7 +10,6 @@ return function (TestKit $t): void {
         $admin = $t->admin();
         $all = $admin->ok('GET', '/api/admin/questions');
         $t->ok(count($all['questions']) >= 140, 'seed bank is loaded');
-        $t->ok(in_array('Science', $all['subjects'], true));
         $hard = $admin->ok('GET', '/api/admin/questions', ['subject' => 'Science', 'difficulty' => 'Hard'])['questions'];
         $t->ok(count($hard) > 0);
         foreach ($hard as $q) $t->eq(['Science', 'Hard'], [$q['subject'], $q['difficulty']]);
@@ -20,6 +19,7 @@ return function (TestKit $t): void {
 
     $t->test('create, validate, edit and archive a question', function () use ($t) {
         $admin = $t->admin();
+        $t->subject('Geography');
         $bad = ['subject' => 'Geography', 'difficulty' => 'Easy', 'prompt' => 'Capital of Peru?', 'options' => ['Lima', 'Lima'], 'answer_idx' => 0];
         $t->fails('INVALID_QUESTION', $admin->request('POST', '/api/admin/questions', $bad));
         $t->fails('INVALID_QUESTION', $admin->request('POST', '/api/admin/questions', ['difficulty' => 'Extreme'] + $bad));
@@ -37,7 +37,7 @@ return function (TestKit $t): void {
         $t->eq('Medium', $edited['difficulty']);
         $t->ok($edited['updated_at'] !== null, 'edited questions are marked so seed refreshes skip them');
 
-        // Archived questions disappear from play (and new subjects appear once active).
+        // Archived questions disappear from play (Geography has no other question, so it leaves the picker).
         $admin->ok('POST', '/api/admin/questions/status', ['id' => $q['id'], 'active' => false]);
         $p = $t->player();
         $t->fails('INVALID_SUBJECT', $p->request('POST', '/api/runs/start', ['difficulty' => 'Easy', 'subject' => 'Geography']));
@@ -49,6 +49,7 @@ return function (TestKit $t): void {
 
     $t->test('CSV import is all-or-nothing and skips duplicates', function () use ($t) {
         $admin = $t->admin();
+        $t->subject('Geography');
         $header = 'subject,difficulty,prompt,option1,option2,option3,option4,answer,explanation';
         $good = 'Geography,easy,"Which river flows through Cairo?",Nile,Amazon,Danube,,1,"The Nile flows north through Cairo."';
         $bad = 'Geography,Easy,Which is a continent?,Asia,Asia,,,1,';

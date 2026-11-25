@@ -8,6 +8,7 @@ use App\Repositories\QuestionRepository;
 use App\Repositories\RunRepository;
 use App\Repositories\SecurityLogRepository;
 use App\Repositories\ShopRepository;
+use App\Repositories\SubjectRepository;
 use App\Repositories\UserRepository;
 use App\Support\ApiError;
 use App\Support\Database;
@@ -38,6 +39,7 @@ final class RunService
         private AchievementService $achievements = new AchievementService(),
         private DailyService $daily = new DailyService(),
         private ChallengeService $challenges = new ChallengeService(),
+        private SubjectRepository $subjects = new SubjectRepository(),
     ) {}
 
     // ---- Starting a run ---------------------------------------------------------
@@ -45,7 +47,7 @@ final class RunService
     public function start(int $userId, string $difficulty, string $subject, ?int $replayOf): array
     {
         $cfg = GameRules::difficulty($difficulty);
-        if ($subject !== GameRules::MIXED_SUBJECT && !in_array($subject, $this->questions->subjects(), true)) {
+        if ($subject !== GameRules::MIXED_SUBJECT && !in_array($subject, $this->subjects->playableNames(), true)) {
             throw ApiError::badRequest('INVALID_SUBJECT', 'Unknown subject');
         }
 

@@ -679,6 +679,16 @@ button { cursor: pointer; }
 .option-input input[type=radio] { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
 textarea.input { height: auto; min-height: 72px; padding-top: 10px; padding-bottom: 10px; resize: vertical; font: inherit; }
 .form-hint { font-size: 13px; color: var(--text-3); }
+.link-btn { background: none; border: 0; padding: 0; margin-left: 6px; }
+.subject-cell { display: flex; align-items: center; gap: 12px; }
+.subject-cell .icon-box { width: 34px; height: 34px; }
+.subject-cell .icon-box .icon { width: 18px; height: 18px; }
+.icon-picker { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.icon-pick { position: relative; }
+.icon-pick input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.icon-pick span { display: grid; place-items: center; height: 44px; border: 1px solid var(--border-strong); border-radius: 10px; color: var(--text-2); transition: border-color .15s, background .15s; }
+.icon-pick input:checked + span { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.icon-pick input:focus-visible + span { box-shadow: var(--ring); }
 .import-errors { white-space: pre-wrap; font-size: 13px; color: var(--danger); background: var(--danger-soft); border-radius: 10px; padding: 12px; max-height: 200px; overflow: auto; }
 
 /* ---- Responsive ------------------------------------------------------------------------------------------------ */

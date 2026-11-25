@@ -7,7 +7,7 @@ MazeQuest stores everything in one MySQL / MariaDB database (InnoDB, `utf8mb4`).
 | Group | Tables | Purpose |
 |---|---|---|
 | Identity | `users`, `admin` | Players and administrators (separate tables, separate sessions) |
-| Content | `questions` | The quiz question bank |
+| Content | `subjects`, `questions` | Subjects and the quiz question bank |
 | Gameplay | `runs`, `run_gates`, `run_answers` | Every maze attempt, its gates, and every answer given |
 | Economy | `ledger`, `items`, `inventory` | Every coin/XP change, the shop catalogue, what players own |
 | Learning | `question_reviews` | Spaced-repetition state per player and question |
@@ -15,7 +15,7 @@ MazeQuest stores everything in one MySQL / MariaDB database (InnoDB, `utf8mb4`).
 | Operations | `security_log`, `schema_migrations` | Login and anti-cheat events; applied migrations |
 | Legacy | `legacy_*` | Tables from the original schema, renamed, not used by the code |
 
-There are 16 tables in use. All money and progress tables reference `users(id)` with `ON DELETE CASCADE`, so deleting a player removes everything they own.
+There are 17 tables in use. All money and progress tables reference `users(id)` with `ON DELETE CASCADE`, so deleting a player removes everything they own.
 
 ## 2. Entity-relationship diagram
 
@@ -57,12 +57,25 @@ Source: [diagrams/src/er-diagram.mmd](diagrams/src/er-diagram.mmd) · PNG: [diag
 
 `admin_id` PK, `fullname`, `email` UK, `username` UK, `password` (hash). Created only with the CLI script `database/create_admin.php`. There is no default account.
 
-### 3.3 `questions` — question bank
+### 3.3 `subjects` — question subjects
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | INT AI | **PK** |
-| `subject` | VARCHAR(100) | e.g. `Mathematics`. "Mixed Mode" is not stored; it means "any subject" |
+| `name` | VARCHAR(100) | **Unique**, compared without case. Same collation as `questions.subject`, which references it. "Mixed Mode" is reserved |
+| `description` | VARCHAR(200) NULL | Shown on the subject picker |
+| `icon` | VARCHAR(30) | One of `SubjectService::ICONS`. Default `book` |
+| `visible` | TINYINT(1) | 1 = players can pick it (it also needs an active question). New subjects start at 0; showing one needs `GameRules::minSubjectQuestions()` (7) active questions |
+| `created_at`, `updated_at` | DATETIME | |
+
+Mixed mode and the daily maze draw only from visible subjects. A subject can be deleted only while it has no questions.
+
+### 3.4 `questions` — question bank
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | INT AI | **PK** |
+| `subject` | VARCHAR(100) | **FK** → `subjects.name` (`ON UPDATE CASCADE`). "Mixed Mode" is not stored; it means "any visible subject" |
 | `difficulty` | ENUM('Easy','Medium','Hard') | Default `Medium` |
 | `prompt` | VARCHAR(500) | |
 | `options` | JSON | Array of 2–4 strings |
@@ -74,7 +87,7 @@ Source: [diagrams/src/er-diagram.mmd](diagrams/src/er-diagram.mmd) · PNG: [diag
 
 **Indexes:** `idx_subject (subject, active)`, `idx_pick (active, subject, difficulty)`.
 
-### 3.4 `runs` — one maze attempt
+### 3.5 `runs` — one maze attempt
 
 | Column | Type | Notes |
 |---|---|---|
@@ -99,7 +112,7 @@ Source: [diagrams/src/er-diagram.mmd](diagrams/src/er-diagram.mmd) · PNG: [diag
 
 **Indexes:** `idx_user_started (user_id, started_at)`, `idx_status (status)`, `idx_daily_rank (daily_date, status, duration_seconds)`.
 
-### 3.5 `run_gates` — gates of a run
+### 3.6 `run_gates` — gates of a run
 
 **PK** `(run_id, gate_no)`, **FK** `run_id` → `runs.id` CASCADE. Columns:
 - `question_id`: the question currently being asked, or NULL. It is cleared after a wrong answer, so the next attempt gets a new question.
@@ -110,13 +123,13 @@ Source: [diagrams/src/er-diagram.mmd](diagrams/src/er-diagram.mmd) · PNG: [diag
 
 Rows are created together with the run (one per gate).
 
-### 3.6 `run_answers` — every answer given
+### 3.7 `run_answers` — every answer given
 
 **PK** `(run_id, gate_no, attempt_no)`. This key is also the **idempotency key**: a retried answer finds the stored row and gets the same result back. Columns: `question_id` (logical reference to `questions.id`), `chosen_idx`, `correct`, `coins_delta`, `xp_delta`, `created_at`.
 
 **FK** `run_id` → `runs.id` CASCADE. **Index:** `idx_question (question_id)`, used for per-question stats and mastery.
 
-### 3.7 `ledger` — every coin and XP change
+### 3.8 `ledger` — every coin and XP change
 
 | Column | Type | Notes |
 |---|---|---|
@@ -129,7 +142,7 @@ Rows are created together with the run (one per gate).
 
 **UK** `uniq_award (user_id, reason, ref)` guarantees each reward is paid at most once. **Indexes:** `idx_user_time (user_id, created_at)` (the XP chart and spins today), `idx_time (created_at)` (weekly XP). The full list of keys is in [algorithm.md §19](algorithm.md#19-idempotent-rewards--ledger-keys).
 
-### 3.8 `items` and `inventory` — shop
+### 3.9 `items` and `inventory` — shop
 
 `items`:
 - `code` VARCHAR(40) **PK**, `name`, `description`, `icon`.
@@ -145,15 +158,15 @@ Rows are created together with the run (one per gate).
 - `item_code` references `items.code` logically. Power-ups granted directly (starter kit, wheel prizes) use the same codes.
 - Using an item: `UPDATE … SET qty = qty − 1 WHERE … AND qty > 0`, which is atomic and can't go below 0.
 
-### 3.9 `question_reviews` — spaced repetition
+### 3.10 `question_reviews` — spaced repetition
 
 **PK** `(user_id, question_id)`. Both are FKs with CASCADE. Columns: `box` (1–5), `due_at`, `updated_at`. **Index:** `idx_due (user_id, due_at)`. A row exists only while the player is still learning that question. It is deleted once the question is learned.
 
-### 3.10 `daily_mazes`
+### 3.11 `daily_mazes`
 
 `day` DATE **PK**, `seed`, `created_at`. One row per day, created on the first request that day with `INSERT IGNORE`.
 
-### 3.11 `weekly_settlements` and `weekly_rewards`
+### 3.12 `weekly_settlements` and `weekly_rewards`
 
 - `weekly_settlements`:
   - `week_start` DATE **PK**, `settled_at`.
@@ -162,19 +175,19 @@ Rows are created together with the run (one per gate).
   - **PK** `(week_start, rank)`. Columns: `user_id` (FK CASCADE), `xp` (a snapshot of that week's XP), `coins`.
   - `rank` is a reserved word in MariaDB, so queries write it as `` `rank` ``.
 
-### 3.12 `user_achievements`
+### 3.13 `user_achievements`
 
 **PK** `(user_id, code)`, `unlocked_at`. **FK** `user_id` CASCADE. `code` is a key of `AchievementService::CATALOGUE`. The names and descriptions live in code, so they can be reworded without a migration.
 
-### 3.13 `security_log`
+### 3.14 `security_log`
 
 `id` BIGINT PK, `event` (`login_success`, `login_failed`, `login_failed:admin`, `run_rejected:TOO_FAST`, …), `username`, `ip`, `detail`, `created_at`. **Indexes:** `idx_event_time (event, created_at)`, `idx_ip_time (ip, created_at)`, the second used by login throttling (10 failures per IP per 15 minutes).
 
-### 3.14 `schema_migrations`
+### 3.15 `schema_migrations`
 
 `name` VARCHAR(190) PK, `applied_at`. One row per applied migration file.
 
-### 3.15 Legacy tables
+### 3.16 Legacy tables
 
 Migration 002 renamed the original prototype's tables to `legacy_*` instead of dropping them: `leaderboard`, `game_session(s)`, `player`, `maze`, `games`, `rewards` and the old `user_achievements`. Migration 004 did the same to `user_badges` (now `legacy_user_badges`). The application never reads them. Drop them by hand once the migrated data has been checked.
 
@@ -188,6 +201,7 @@ Migration 002 renamed the original prototype's tables to `legacy_*` instead of d
 | users → ledger | 1 : N | FK | cascade |
 | users → inventory | 1 : N | FK | cascade |
 | users → question_reviews | 1 : N | FK | cascade |
+| subjects → questions (by name) | 1 : N | FK | restricted; a rename cascades to questions, and `SubjectRepository::update` renames `runs.subject` too |
 | questions → question_reviews | 1 : N | FK | cascade (questions are archived, not deleted, so in practice this doesn't fire) |
 | users → user_achievements | 1 : N | FK | cascade |
 | users → weekly_rewards | 1 : N | FK | cascade |
@@ -268,6 +282,8 @@ Each file returns `function (PDO $db, Migrator $m)`. The `Migrator` helpers (`ta
 | `002_migrate_legacy_data` | Converts per-level XP to lifetime XP; writes `opening_balance` ledger rows; grants starter power-ups; deactivates legacy admin rows in `users`; renames old tables to `legacy_*` |
 | `003_seed_questions_and_items` | Seeds the first 34 questions (only into an empty table) and upserts the shop items |
 | `004_learning_and_engagement` | Adds difficulty/explanation/`updated_at` to questions and upserts the 145-question seed (refreshing only untouched rows); adds `question_reviews`, `daily_mazes`, `weekly_*`, `user_achievements` (migrating badges); adds run modes, share codes, pickups and summary fields; adds equipped cosmetics; adds the streak freeze and opens the Forest/Space themes |
+
+| `005_subjects` | Adds `subjects` (filled from the question bank, all visible, with the picker's icons and descriptions) and the `questions.subject` → `subjects.name` foreign key |
 
 **Rules for a new migration:**
 - Add a new numbered file. Never edit an applied one.

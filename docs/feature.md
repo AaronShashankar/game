@@ -190,7 +190,8 @@ The app shell has a sidebar on desktop and a bottom tab bar on phones. Layouts w
 |---|---|
 | **Overview** | Players, coins in circulation, active players (24 h), average level, total XP, completed mazes, gates opened, correct answers; recent activity feed |
 | **Players** | List of all players with stats; **add a player** with starting coins (0–1,000,000) and level (1–100), recorded as an `admin_grant`; **delete** a player |
-| **Questions** | Search and filter by subject, difficulty and status; answer counts and accuracy per question; **create and edit** (2–4 options, the correct option, explanation, difficulty); **archive and restore**; **CSV import** (all-or-nothing, row-level errors, duplicates skipped, ≤ 500 KB / 1,000 rows) with a downloadable template |
+| **Subjects** | Add a subject (name, optional description, icon); it starts **hidden**. **Show** it once it has at least 7 active questions (enough for a Hard maze without repeats); **hide** it to take it out of play, including Mixed mode and the daily maze. **Rename** (questions and past runs follow). **Delete** only while it has no questions. Per-subject question counts by difficulty; **Add question** opens the editor with the subject chosen |
+| **Questions** | Search and filter by subject, difficulty and status; answer counts and accuracy per question; **create and edit** (an existing subject, 2–4 options, the correct option, explanation, difficulty; **Save and add another** keeps the subject and difficulty); **archive and restore**; **CSV import** (all-or-nothing, row-level errors, duplicates skipped, ≤ 500 KB / 1,000 rows) with a downloadable template |
 | **Analytics** | Average game length, answer success rate, most popular subject, daily active players, completion rate, the 5 hardest questions (≥ 3 answers) |
 | **Security** | The last 100 security events: logins, failures, rejected game events, with IP |
 | **Data** | JSON export of players, runs, questions and items; admin password change |
@@ -207,7 +208,7 @@ Admins are created only from the command line (`database/create_admin.php`). The
 - **Idempotent actions:** retrying an answer, a pickup, a check-in or a reward after a network error never pays twice.
 - **Accessibility:** the game can be played entirely by keyboard. Answer feedback and toasts are announced (`aria-live`), and focus is visible. Answer results use an icon and words as well as colour.
 - **Responsive:** phone, tablet and desktop layouts; high-DPI canvas.
-- **Automated tests:** 29 integration tests against a throwaway database (`docker compose exec -T web php tests/run.php`).
+- **Automated tests:** 36 integration tests against a throwaway database (`docker compose exec -T web php tests/run.php`).
 
 ## 13. Not implemented
 
@@ -231,4 +232,4 @@ Admins are created only from the command line (`database/create_admin.php`). The
 | Daily maze status | `GET /api/daily` |
 | Leaderboards | `GET /api/leaderboard?type=xp|coins|level|streak|weekly|daily&limit=` |
 | Game runs | `POST /api/runs/start` (`mode` = normal / daily / challenge), `/question`, `/answer`, `/powerup`, `/pickup`, `/complete`, `/timeout` |
-| Admin | `GET /api/admin/stats`, `/users`, `/activity`, `/security-logs`, `/analytics`, `/export`, `/questions`; `POST /api/admin/users`, `/users/delete`, `/password`, `/questions`, `/questions/status`, `/questions/import` |
+| Admin | `GET /api/admin/stats`, `/users`, `/activity`, `/security-logs`, `/analytics`, `/export`, `/questions`, `/subjects`; `POST /api/admin/users`, `/users/delete`, `/password`, `/questions`, `/questions/status`, `/questions/import`, `/subjects`, `/subjects/visibility`, `/subjects/delete` |
