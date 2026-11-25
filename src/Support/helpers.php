@@ -110,6 +110,15 @@ function theme_toggle(): string
          . icon('moon', 'theme-moon') . icon('sun', 'theme-sun') . '</button>';
 }
 
+// Eye button that shows or hides a password field (behaviour in layout.js).
+// Put it next to the input inside <div class="input-wrap">.
+function password_toggle(string $inputId): string
+{
+    return '<button type="button" class="input-toggle" data-password-toggle="' . e($inputId) . '" aria-controls="' . e($inputId) . '"'
+         . ' aria-label="Show password" aria-pressed="false" title="Show password">'
+         . icon('eye', 'pw-show') . icon('eye-off', 'pw-hide') . '</button>';
+}
+
 // <script> tag for a page's own JS file in public/assets/js/.
 function page_script(string $name): string
 {

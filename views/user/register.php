@@ -28,13 +28,19 @@ require __DIR__ . '/../layouts/document-start.php';
       <div class="form-row">
         <div class="field">
           <label for="regPassword">Password</label>
-          <input class="input" type="password" id="regPassword" autocomplete="new-password"
-            placeholder="Min. 6 characters" required minlength="6">
+          <div class="input-wrap">
+            <input class="input" type="password" id="regPassword" autocomplete="new-password"
+              placeholder="Min. 6 characters" required minlength="6">
+            <?= password_toggle('regPassword') ?>
+          </div>
         </div>
         <div class="field">
           <label for="regConfirm">Confirm</label>
-          <input class="input" type="password" id="regConfirm" autocomplete="new-password" placeholder="Repeat password"
-            required>
+          <div class="input-wrap">
+            <input class="input" type="password" id="regConfirm" autocomplete="new-password" placeholder="Repeat password"
+              required>
+            <?= password_toggle('regConfirm') ?>
+          </div>
         </div>
       </div>
       <div id="regError" class="form-error" role="alert"></div>

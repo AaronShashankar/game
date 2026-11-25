@@ -241,6 +241,20 @@ button { cursor: pointer; }
 .input::placeholder { color: var(--text-3); }
 .input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
 .input[readonly] { background: var(--surface-2); }
+/* Password field with a show/hide button inside it */
+.input-wrap { position: relative; }
+.input-wrap .input { padding-right: 44px; }
+.input-toggle {
+  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  display: grid; place-items: center; width: 34px; height: 34px;
+  border: 0; border-radius: 8px; background: none; color: var(--text-3);
+  transition: color .15s, background .15s;
+}
+.input-toggle:hover { color: var(--text); background: var(--surface-2); }
+.input-toggle .icon { width: 18px; height: 18px; }
+.input-toggle .pw-hide, .input-toggle[aria-pressed="true"] .pw-show { display: none; }
+.input-toggle[aria-pressed="true"] .pw-hide { display: block; }
+input[type=password]::-ms-reveal { display: none; }   /* Edge's own eye button would double up */
 .form-error { min-height: 20px; font-size: 13px; color: var(--danger); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; }

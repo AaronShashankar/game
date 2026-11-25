@@ -20,7 +20,10 @@ require __DIR__ . '/../layouts/document-start.php';
       </div>
       <div class="field">
         <label for="loginPassword">Password</label>
-        <input class="input" type="password" id="loginPassword" name="password" autocomplete="current-password" required>
+        <div class="input-wrap">
+          <input class="input" type="password" id="loginPassword" name="password" autocomplete="current-password" required>
+          <?= password_toggle('loginPassword') ?>
+        </div>
       </div>
       <div id="loginErrorMessage" class="form-error" role="alert"></div>
       <button type="submit" class="btn btn-primary btn-lg btn-block" id="loginButton">Sign in</button>
