@@ -263,6 +263,7 @@ async function deleteSubject(s) {
 // ---- Question bank ------------------------------------------------------------
 let questionCache = new Map();
 let searchTimer = null;
+const selectedQuestions = new Set();   // ids ticked in the current list
 
 function loadQuestionsTab() {
   fetchSubjects().catch((e) => showError(e.message));
@@ -277,17 +278,22 @@ async function loadQuestions() {
   try {
     const { questions } = await App.api('/api/admin/questions?' + params);
     questionCache = new Map(questions.map((q) => [q.id, q]));
+    // Keep only ticks that are still on screen, so a delete never hits hidden rows.
+    for (const id of [...selectedQuestions]) if (!questionCache.has(id)) selectedQuestions.delete(id);
     $('qCount').textContent = `${questions.length} question${questions.length === 1 ? '' : 's'}${questions.length >= 500 ? ' (first 500, narrow the filters)' : ''}`;
     if (!questions.length) {
-      body.innerHTML = '<tr><td colspan="6" class="empty">No questions match these filters.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="empty">No questions match these filters.</td></tr>';
+      updateQuestionSelection();
       return;
     }
     body.innerHTML = '';
     for (const q of questions) {
       const row = document.createElement('tr');
-      if (!q.active) row.className = 'is-archived';
+      row.dataset.id = q.id;
+      if (!q.active) row.classList.add('is-archived');
       const answer = q.options[q.answer_idx];
       row.innerHTML = `
+        <td class="check-cell"><input type="checkbox" data-act="select" aria-label="Select this question"></td>
         <td class="wrap"><div style="font-weight:500">${esc(q.prompt)}</div>
           <div class="subtle" style="font-size:13px">Answer: ${esc(answer)}${q.explanation ? '' : ' · <span style="color:var(--warning)">no explanation</span>'}</div></td>
         <td>${esc(q.subject)}</td>
@@ -297,13 +303,80 @@ async function loadQuestions() {
         <td style="text-align:right; white-space:nowrap">
           <button class="btn btn-ghost btn-sm" data-act="edit">${App.icon('pencil', 'icon-sm')}Edit</button>
           <button class="btn btn-ghost btn-sm" data-act="toggle">${App.icon(q.active ? 'archive' : 'refresh', 'icon-sm')}${q.active ? 'Archive' : 'Restore'}</button>
+          <button class="btn btn-ghost btn-sm" data-act="delete" aria-label="Delete question">${App.icon('trash', 'icon-sm')}Delete</button>
         </td>`;
+      const box = row.querySelector('[data-act=select]');
+      box.checked = selectedQuestions.has(q.id);
+      box.addEventListener('change', () => {
+        box.checked ? selectedQuestions.add(q.id) : selectedQuestions.delete(q.id);
+        updateQuestionSelection();
+      });
       row.querySelector('[data-act=edit]').addEventListener('click', () => openQuestionModal(q.id));
       row.querySelector('[data-act=toggle]').addEventListener('click', () => setQuestionActive(q, !q.active));
+      row.querySelector('[data-act=delete]').addEventListener('click', () => deleteQuestions([q.id]));
       body.appendChild(row);
     }
+    updateQuestionSelection();
   } catch (e) {
-    body.innerHTML = `<tr><td colspan="6" class="empty">${esc(e.message)}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="empty">${esc(e.message)}</td></tr>`;
+    selectedQuestions.clear();
+    updateQuestionSelection();
+  }
+}
+
+// Syncs the row highlights, the select-all box and the bulk bar with the selection.
+function updateQuestionSelection() {
+  const n = selectedQuestions.size;
+  const shown = questionCache.size;
+  document.querySelectorAll('#questionRows tr[data-id]').forEach((row) => {
+    row.classList.toggle('is-selected', selectedQuestions.has(Number(row.dataset.id)));
+  });
+  const all = $('qSelectAll');
+  all.checked = shown > 0 && n === shown;
+  all.indeterminate = n > 0 && n < shown;
+  all.disabled = shown === 0;
+  $('qBulkBar').hidden = n === 0;
+  $('qSelectedCount').textContent = `${n} question${n === 1 ? '' : 's'} selected`;
+}
+
+function clearQuestionSelection() {
+  selectedQuestions.clear();
+  document.querySelectorAll('#questionRows [data-act=select]').forEach((b) => { b.checked = false; });
+  updateQuestionSelection();
+}
+
+$('qSelectAll').addEventListener('change', (e) => {
+  if (e.target.checked) questionCache.forEach((_, id) => selectedQuestions.add(id));
+  else selectedQuestions.clear();
+  document.querySelectorAll('#questionRows [data-act=select]').forEach((b) => { b.checked = e.target.checked; });
+  updateQuestionSelection();
+});
+
+function deleteSelectedQuestions() {
+  deleteQuestions([...selectedQuestions]);
+}
+
+async function deleteQuestions(ids) {
+  if (!ids.length) return;
+  const qs = ids.map((id) => questionCache.get(id)).filter(Boolean);
+  const answered = qs.filter((q) => q.times_answered > 0).length;
+  const what = ids.length === 1 ? `the question "${qs[0]?.prompt ?? ''}"` : `${ids.length} questions`;
+  const history = answered
+    ? `\n\n${answered === ids.length && ids.length === 1 ? 'It has' : `${answered} of them ${answered === 1 ? 'has' : 'have'}`} been answered by players. `
+      + 'Those answers will disappear from past game summaries. Archive instead to keep the history.'
+    : '';
+  if (!confirm(`Delete ${what}? This cannot be undone.${history}`)) return;
+  const bar = $('qBulkBar');
+  bar.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const { deleted } = await App.api('/api/admin/questions/delete', { body: { ids } });
+    ids.forEach((id) => selectedQuestions.delete(id));
+    App.toast(`Deleted ${deleted} question${deleted === 1 ? '' : 's'}`, 'success');
+    loadQuestions();
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    bar.querySelectorAll('button').forEach((b) => { b.disabled = false; });
   }
 }
 

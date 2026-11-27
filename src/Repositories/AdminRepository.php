@@ -27,8 +27,13 @@ final class AdminRepository
         return $s->fetch() ?: null;
     }
 
-    public function updatePassword(int $id, string $hash): void
+    // Also bumps auth_version, which signs the admin out everywhere else.
+    // Returns the new version.
+    public function updatePassword(int $id, string $hash): int
     {
-        $this->db->prepare('UPDATE admin SET password = ? WHERE admin_id = ?')->execute([$hash, $id]);
+        $this->db->prepare('UPDATE admin SET password = ?, auth_version = auth_version + 1 WHERE admin_id = ?')->execute([$hash, $id]);
+        $s = $this->db->prepare('SELECT auth_version FROM admin WHERE admin_id = ?');
+        $s->execute([$id]);
+        return (int) $s->fetchColumn();
     }
 }

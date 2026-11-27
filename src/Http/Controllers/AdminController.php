@@ -100,6 +100,13 @@ final class AdminController
         return ['message' => 'Question updated'];
     }
 
+    public function deleteQuestions(Request $r): array
+    {
+        $ids = $r->get('ids');
+        if ($ids === null && $r->get('id') !== null) $ids = [$r->get('id')];
+        return $this->questions->delete($ids);
+    }
+
     public function importQuestions(Request $r): array
     {
         $csv = $r->get('csv');

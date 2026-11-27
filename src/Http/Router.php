@@ -59,15 +59,12 @@ final class Router
         }
     }
 
-    // Guards: 'player' / 'admin'. API routes get 401, pages redirect to login
+    // Guards: 'player' / 'admin', checked against the database (Auth::check).
+    // API routes get 401, pages redirect to login
     // (players come back to the page they asked for via ?next=).
     private function guard(string $guard, bool $isApi, Request $request): void
     {
-        $ok = match ($guard) {
-            'player' => Auth::playerId() !== null,
-            'admin'  => Auth::adminId() !== null,
-        };
-        if ($ok) return;
+        if (Auth::check($guard)) return;
         if ($isApi) throw ApiError::unauthorized();
         if ($guard === 'admin') redirect('admin');
         $query = $_SERVER['QUERY_STRING'] ?? '';

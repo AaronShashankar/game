@@ -88,4 +88,5 @@ return function (Router $r): void {
     $r->post('/api/admin/questions',         [$admin, 'saveQuestion'], 'admin');
     $r->post('/api/admin/questions/status',  [$admin, 'questionStatus'], 'admin');
     $r->post('/api/admin/questions/import',  [$admin, 'importQuestions'], 'admin');
+    $r->post('/api/admin/questions/delete',  [$admin, 'deleteQuestions'], 'admin');
 };

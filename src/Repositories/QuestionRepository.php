@@ -168,6 +168,21 @@ final class QuestionRepository
         return $s->rowCount() === 1;
     }
 
+    // Deletes the questions and returns how many went. A gate that is waiting
+    // on one of them in an unfinished run is reset, so the player is simply
+    // served a different question. Past answers stay (run_answers has no
+    // foreign key); reviews go with the question (ON DELETE CASCADE).
+    public function deleteMany(array $ids): int
+    {
+        if (!$ids) return 0;
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $this->db->prepare("UPDATE run_gates SET question_id = NULL, served_at = NULL
+                            WHERE question_id IN ($in) AND status = 'pending'")->execute($ids);
+        $s = $this->db->prepare("DELETE FROM questions WHERE id IN ($in)");
+        $s->execute($ids);
+        return $s->rowCount();
+    }
+
     public function existsInSubject(string $subject, string $prompt): bool
     {
         $s = $this->db->prepare('SELECT 1 FROM questions WHERE subject = ? AND prompt = ? LIMIT 1');

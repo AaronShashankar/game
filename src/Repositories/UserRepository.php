@@ -52,9 +52,14 @@ final class UserRepository
                  ->execute([$username, $email, $avatar, $id]);
     }
 
-    public function updatePassword(int $id, string $hash): void
+    // Also bumps auth_version, which signs the player out everywhere else.
+    // Returns the new version.
+    public function updatePassword(int $id, string $hash): int
     {
-        $this->db->prepare('UPDATE users SET password = ? WHERE id = ?')->execute([$hash, $id]);
+        $this->db->prepare('UPDATE users SET password = ?, auth_version = auth_version + 1 WHERE id = ?')->execute([$hash, $id]);
+        $s = $this->db->prepare('SELECT auth_version FROM users WHERE id = ?');
+        $s->execute([$id]);
+        return (int) $s->fetchColumn();
     }
 
     // Balance changes. Only ProgressionService calls these.

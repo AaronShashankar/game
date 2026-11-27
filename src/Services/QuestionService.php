@@ -9,13 +9,15 @@ use App\Repositories\SubjectRepository;
 use App\Support\ApiError;
 use App\Support\Database;
 
-// Admin management of the question bank: validation, edits and CSV import.
-// Questions are archived, never deleted, because past answers refer to them.
+// Admin management of the question bank: validation, edits, deletion and CSV import.
+// Archiving keeps a question's answer history visible in players' past results;
+// deleting removes it for good.
 final class QuestionService
 {
     public const CSV_COLUMNS = ['subject', 'difficulty', 'prompt', 'option1', 'option2', 'option3', 'option4', 'answer', 'explanation'];
     private const MAX_CSV_BYTES = 512_000;
     private const MAX_CSV_ROWS = 1000;
+    private const MAX_DELETE = 500;   // the admin list shows at most 500
 
     public function __construct(
         private QuestionRepository $questions = new QuestionRepository(),
@@ -42,6 +44,23 @@ final class QuestionService
     {
         if ($this->questions->find($id) === null) throw ApiError::notFound('Question not found');
         $this->questions->setActive($id, $active);
+    }
+
+    /** @return array{deleted: int} */
+    public function delete(mixed $ids): array
+    {
+        if (!is_array($ids)) throw ApiError::badRequest('INVALID_INPUT', 'Choose the questions to delete');
+        $clean = [];
+        foreach ($ids as $id) {
+            if (!is_int($id) && !(is_string($id) && ctype_digit($id))) throw ApiError::badRequest('INVALID_INPUT', 'Question ids must be numbers');
+            $clean[(int) $id] = (int) $id;
+        }
+        if (!$clean) throw ApiError::badRequest('INVALID_INPUT', 'Choose the questions to delete');
+        if (count($clean) > self::MAX_DELETE) throw ApiError::badRequest('INVALID_INPUT', 'At most ' . self::MAX_DELETE . ' questions at a time');
+
+        $deleted = Database::transaction(fn () => $this->questions->deleteMany(array_values($clean)));
+        if ($deleted === 0) throw ApiError::notFound(count($clean) === 1 ? 'Question not found' : 'None of those questions exist');
+        return ['deleted' => $deleted];
     }
 
     // Imports every row or none. Returns counts, or throws with every row's problems listed.

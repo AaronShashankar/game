@@ -105,12 +105,18 @@ $tabs = [
             <button class="btn btn-secondary btn-sm" onclick="openImportModal()"><?= icon('upload', 'icon-sm') ?>Import CSV</button>
             <button class="btn btn-secondary btn-sm" onclick="openQuestionModal()"><?= icon('plus', 'icon-sm') ?>Add question</button>
           </div>
+          <div class="toolbar bulk-bar" id="qBulkBar" hidden>
+            <span class="grow" id="qSelectedCount" style="font-size:14px; font-weight:500"></span>
+            <button class="btn btn-ghost btn-sm" onclick="clearQuestionSelection()">Clear selection</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSelectedQuestions()"><?= icon('trash', 'icon-sm') ?>Delete selected</button>
+          </div>
           <div class="table-wrap">
             <table class="table">
               <thead>
-                <tr><th>Question</th><th>Subject</th><th>Difficulty</th><th class="num">Answered</th><th class="num">Correct</th><th></th></tr>
+                <tr><th class="check-cell"><input type="checkbox" id="qSelectAll" aria-label="Select all questions shown"></th>
+                  <th>Question</th><th>Subject</th><th>Difficulty</th><th class="num">Answered</th><th class="num">Correct</th><th></th></tr>
               </thead>
-              <tbody id="questionRows"><tr><td colspan="6" class="empty"><div class="spinner"></div>Loading…</td></tr></tbody>
+              <tbody id="questionRows"><tr><td colspan="7" class="empty"><div class="spinner"></div>Loading…</td></tr></tbody>
             </table>
           </div>
           <div class="toolbar" style="border-top:1px solid var(--border); border-bottom:0"><span class="subtle" style="font-size:13px" id="qCount"></span></div>

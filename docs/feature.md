@@ -29,7 +29,8 @@ Every feature in the current build, with the exact rules and numbers the server 
 | **Return to the page you wanted** | Opening a player page while signed out goes to `/user?next=<page>`. After login or sign-up the player lands back there. Only same-site paths are accepted |
 | **Admin login** | Separate page (`/admin`), separate `admin` table and session key |
 | **Profile** | Change username, email and avatar (image URL, or an uploaded PNG/JPEG/GIF/WebP/SVG ≤ ~200 KB) |
-| **Password change** | Requires the current password. Players need ≥ 6 characters, admins ≥ 8 |
+| **Password change** | Requires the current password. Players need ≥ 6 characters, admins ≥ 8. **Signs out every other device**; the current one stays signed in. Resetting an admin password with `create_admin.php` signs that admin out everywhere |
+| **Session check** | Every protected page and API call re-checks the account. A deleted or deactivated player, a deleted admin, or a session from before a password change is signed out on the next request (APIs return 401, pages go to the login page) |
 | **Logout** | Destroys the session and the cookie |
 | **Themes** | Light and dark. Follows the OS setting until the player picks one; the choice is remembered in the browser |
 
@@ -191,7 +192,7 @@ The app shell has a sidebar on desktop and a bottom tab bar on phones. Layouts w
 | **Overview** | Players, coins in circulation, active players (24 h), average level, total XP, completed mazes, gates opened, correct answers; recent activity feed |
 | **Players** | List of all players with stats; **add a player** with starting coins (0–1,000,000) and level (1–100), recorded as an `admin_grant`; **delete** a player |
 | **Subjects** | Add a subject (name, optional description, icon); it starts **hidden**. **Show** it once it has at least 7 active questions (enough for a Hard maze without repeats); **hide** it to take it out of play, including Mixed mode and the daily maze. **Rename** (questions and past runs follow). **Delete** only while it has no questions. Per-subject question counts by difficulty; **Add question** opens the editor with the subject chosen |
-| **Questions** | Search and filter by subject, difficulty and status; answer counts and accuracy per question; **create and edit** (an existing subject, 2–4 options, the correct option, explanation, difficulty; **Save and add another** keeps the subject and difficulty); **archive and restore**; **CSV import** (all-or-nothing, row-level errors, duplicates skipped, ≤ 500 KB / 1,000 rows) with a downloadable template |
+| **Questions** | Search and filter by subject, difficulty and status; answer counts and accuracy per question; **create and edit** (an existing subject, 2–4 options, the correct option, explanation, difficulty; **Save and add another** keeps the subject and difficulty); **archive and restore**; **delete** one question or **select several** (or all shown) and delete them together — deleting is permanent and drops the question from past game summaries, so archiving is offered as the way to keep history; **CSV import** (all-or-nothing, row-level errors, duplicates skipped, ≤ 500 KB / 1,000 rows) with a downloadable template |
 | **Analytics** | Average game length, answer success rate, most popular subject, daily active players, completion rate, the 5 hardest questions (≥ 3 answers) |
 | **Security** | The last 100 security events: logins, failures, rejected game events, with IP |
 | **Data** | JSON export of players, runs, questions and items; admin password change |
@@ -232,4 +233,4 @@ Admins are created only from the command line (`database/create_admin.php`). The
 | Daily maze status | `GET /api/daily` |
 | Leaderboards | `GET /api/leaderboard?type=xp|coins|level|streak|weekly|daily&limit=` |
 | Game runs | `POST /api/runs/start` (`mode` = normal / daily / challenge), `/question`, `/answer`, `/powerup`, `/pickup`, `/complete`, `/timeout` |
-| Admin | `GET /api/admin/stats`, `/users`, `/activity`, `/security-logs`, `/analytics`, `/export`, `/questions`, `/subjects`; `POST /api/admin/users`, `/users/delete`, `/password`, `/questions`, `/questions/status`, `/questions/import`, `/subjects`, `/subjects/visibility`, `/subjects/delete` |
+| Admin | `GET /api/admin/stats`, `/users`, `/activity`, `/security-logs`, `/analytics`, `/export`, `/questions`, `/subjects`; `POST /api/admin/users`, `/users/delete`, `/password`, `/questions`, `/questions/status`, `/questions/import`, `/questions/delete`, `/subjects`, `/subjects/visibility`, `/subjects/delete` |

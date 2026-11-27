@@ -78,7 +78,8 @@ final class AuthService
         $user = $this->users->find($userId);
         if (!password_verify($current, $user['password'])) throw ApiError::badRequest('WRONG_PASSWORD', 'Current password is incorrect');
         if (strlen($new) < 6) throw ApiError::badRequest('WEAK_PASSWORD', 'Password must be at least 6 characters');
-        $this->users->updatePassword($userId, password_hash($new, PASSWORD_DEFAULT));
+        // Signs out the player's other devices; this one stays signed in.
+        Auth::setVersion($this->users->updatePassword($userId, password_hash($new, PASSWORD_DEFAULT)));
     }
 
     // Previously this looked admins up in the users table, so it never worked.
@@ -89,7 +90,7 @@ final class AuthService
             throw ApiError::badRequest('WRONG_PASSWORD', 'Current password is incorrect');
         }
         if (strlen($new) < 8) throw ApiError::badRequest('WEAK_PASSWORD', 'Password must be at least 8 characters');
-        $this->admins->updatePassword($adminId, password_hash($new, PASSWORD_DEFAULT));
+        Auth::setVersion($this->admins->updatePassword($adminId, password_hash($new, PASSWORD_DEFAULT)));
     }
 
     public static function validateUsername(string $username): void

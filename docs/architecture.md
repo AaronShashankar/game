@@ -68,7 +68,7 @@ MazeQuest is a **layered monolith** with a **server-authoritative game model**:
 3. **Router:**
    - Looks up `"POST /api/runs/answer"`.
    - Not found, but the path exists for the other method: **405**. Not found at all: **404**.
-   - The `player` guard checks `$_SESSION['player_id']`. Without it, an API route gets **401** and a page route redirects to `/user?next=<path>`.
+   - The `player` guard checks `$_SESSION['player_id']`, then `Auth::check()` re-reads the account: it must still exist, be active, and have the same `auth_version` as at login (a password change bumps it). Without it, an API route gets **401** and a page route redirects to `/user?next=<path>`.
 4. **Controller** (`RunController::answer`) reads `run_id`, `gate_no`, `attempt_no` and `option` as integers. A missing or non-numeric value is a **422** `INVALID_INPUT`.
 5. **Service** (`RunService::answer`) runs inside `guarded()`. That is a database transaction, plus security logging for rejections that suggest tampering (`TOO_FAST`, `WRONG_ATTEMPT`, …). Inside it:
    - Locks the run row (`SELECT … FOR UPDATE`).
@@ -100,7 +100,7 @@ The full sequence is in [diagrams/svg/sequence-answer.svg](diagrams/svg/sequence
 |---|---|
 | **Configuration** | `.env` (git-ignored) → `env()` → `config/app.php`. Real environment variables win over `.env`. `BASE_PATH` is auto-detected |
 | **Autoloading** | `spl_autoload_register` maps `App\Foo\Bar` to `src/Foo/Bar.php`. No Composer |
-| **Sessions and identity** | PHP file sessions. Players and admins use separate keys (`player_id`, `admin_id`) because they come from different tables. `session_regenerate_id(true)` on every login |
+| **Sessions and identity** | PHP file sessions. Players and admins use separate keys (`player_id`, `admin_id`) because they come from different tables. `session_regenerate_id(true)` on every login. The session stores the account's `auth_version`, and every guarded request compares it with the database (`Auth::check`), so deletion, deactivation and password changes sign other sessions out at once |
 | **Authorisation** | Route guards. Every player query is scoped by `user_id` from the session, never from the request (for example, `RunRepository::find($runId, $userId)`) |
 | **Transactions** | `Database::transaction(fn)` commits, or rolls back and rethrows. Services that change money or game state always run in one |
 | **Concurrency** | Row locks (`FOR UPDATE` on the run, gate and user); unique keys as idempotency guards (`ledger.uniq_award`, `run_answers` PK, `runs.uniq_daily`, `weekly_settlements` PK); conditional updates (`coins >= ?`, `qty > 0`, `pickups_mask & bit = 0`) |

@@ -687,6 +687,10 @@ input[type=password]::-ms-reveal { display: none; }   /* Edge's own eye button w
 .toolbar .grow { flex: 1; min-width: 180px; }
 .table td.wrap { white-space: normal; min-width: 280px; }
 .table tr.is-archived td { color: var(--text-3); }
+.table .check-cell { width: 1%; padding-right: 0; }
+.table .check-cell input, #qSelectAll { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; vertical-align: middle; }
+.table tr.is-selected td { background: var(--accent-soft); }
+.bulk-bar { background: var(--danger-soft); }
 .option-inputs { display: grid; gap: 8px; }
 .option-input { display: flex; align-items: center; gap: 10px; }
 .option-input .input { font-size: 15px; font-weight: 400; color: var(--text); }

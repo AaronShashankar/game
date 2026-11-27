@@ -37,8 +37,9 @@ if (!$matches) {
     exit(0);
 }
 if (count($matches) === 1 && strcasecmp($matches[0]['email'], $email) === 0 && $matches[0]['username'] === $username) {
-    $db->prepare('UPDATE admin SET password = ? WHERE email = ?')->execute([$hash, $email]);
-    echo "Reset the password for admin '$username' <$email>.\n";
+    // Bumping auth_version signs this admin out of every open session.
+    $db->prepare('UPDATE admin SET password = ?, auth_version = auth_version + 1 WHERE email = ?')->execute([$hash, $email]);
+    echo "Reset the password for admin '$username' <$email>. Their open sessions are signed out.\n";
     exit(0);
 }
 foreach ($matches as $m) {

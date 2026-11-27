@@ -117,9 +117,9 @@ final class RunService
 
             // Asking again for the same gate returns the same question, so
             // re-requesting can't be used to shop for an easier one.
-            if ($gate['question_id'] !== null) {
-                $q = $this->questions->find((int) $gate['question_id']);
-            } else {
+            // (If an admin deleted it meanwhile, a new one is picked below.)
+            $q = $gate['question_id'] !== null ? $this->questions->find((int) $gate['question_id']) : null;
+            if ($q === null) {
                 [$q, $isReview] = $this->pickQuestion($run, $userId, $gateNo, (int) $gate['attempts'] + 1);
                 if ($q === null) throw ApiError::conflict('NO_QUESTIONS', 'No questions available for this subject');
                 $this->runs->serveQuestion($runId, $gateNo, (int) $q['id']);
@@ -177,7 +177,8 @@ final class RunService
                 throw ApiError::conflict('TOO_FAST', 'Answer submitted too quickly');
             }
 
-            $q = $this->questions->find((int) $gate['question_id']);
+            $q = $this->questions->find((int) $gate['question_id'])
+                ?? throw ApiError::conflict('NO_QUESTION_SERVED', 'This question was just removed. Walk into the gate again for a new one');
             if ($chosenIdx < 0 || $chosenIdx >= count($q['options'])) {
                 throw ApiError::badRequest('INVALID_OPTION', 'Option out of range');
             }
